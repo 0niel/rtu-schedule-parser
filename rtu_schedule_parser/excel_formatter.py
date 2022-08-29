@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import re
 
 from .constants import Campus, LessonType
 from .formatter import Formatter
+from .schedule import Room
 
 
 class ExcelFormatter(Formatter):
@@ -303,7 +306,7 @@ class ExcelFormatter(Formatter):
 
         return lesson
 
-    def get_rooms(self, rooms_cell_value: str) -> list[tuple[str, Campus | None]]:
+    def get_rooms(self, rooms_cell_value: str) -> list[Room]:
         result = []
         for short_name in self.CAMPUSES_SHORT_NAMS:
             res = re.findall(short_name, rooms_cell_value, flags=re.A)
@@ -319,14 +322,22 @@ class ExcelFormatter(Formatter):
                     rooms,
                     flags=re.A,
                 )
-                result.append((rooms, self.CAMPUSES_SHORT_NAMS[short_name]))
+                result.append(Room(rooms, self.CAMPUSES_SHORT_NAMS[short_name]))
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
-            result = [(room, None) for room in rooms if room]
+            result = [Room(room, None) for room in rooms if room]
         return result
 
     def get_teachers(self, names_cell_value: str):
+        if not re.search(r"[а-яА-Я]", names_cell_value):
+            return []
+
         teachers_names = names_cell_value.strip()
+
+        re_typos = r"[а-яё]{1}(,) {0,2}[а-яё]{1}[. ]"
+        typos = re.finditer(re_typos, teachers_names, flags=re.I)
+        for typo in typos:
+            teachers_names = teachers_names[:typo.span(1)[0]] + '.' + teachers_names[typo.span(1)[1]:]
 
         # разделяем имена по разделителям
         names = re.split(self.RE_SEPARATORS, teachers_names)
@@ -336,7 +347,7 @@ class ExcelFormatter(Formatter):
         else:
             # Имена с инициалами могут быть написаны в одной строке через пробелы.
             # Пример: Иванов И.И. Иванова И.И.
-            re_teacher_name = r"(?:(?:(?:[а-я\-]{1,}) +(?:[а-я]{1}\. {0,2}){1,2})|(?:(?:[а-я\-]{1,}) ?))"
+            re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
 
             # поиск имён без учета регистра
             found = re.findall(re_teacher_name, teachers_names, flags=re.I)
@@ -344,7 +355,7 @@ class ExcelFormatter(Formatter):
 
         return result
 
-    def get_weeks(self, lesson: str, is_even=None, max_weeks=None):
+    def get_weeks(self, lesson: str, is_even=None, max_weeks=None) -> list[list[int]]:
         result = []
 
         lesson = self.__fix_typos(lesson)

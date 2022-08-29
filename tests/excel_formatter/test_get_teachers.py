@@ -48,3 +48,20 @@ def test_get_teacher_7(excel_formatter):
     result = excel_formatter.get_teachers("Рогачев Горелик")
     correct_result = ["Рогачев", "Горелик"]
     assert result == correct_result
+
+def test_get_teacher_8(excel_formatter):
+    result = excel_formatter.get_teachers("Новосёлова Е.В.")
+    correct_result = ["Новосёлова Е.В."]
+    assert result == correct_result
+
+
+def test_get_teacher_9(excel_formatter):
+    result = excel_formatter.get_teachers("Новосёлова Е.В.\nКомарова М,И.")
+    correct_result = ["Новосёлова Е.В.", "Комарова М.И."]
+    assert result == correct_result
+
+
+def test_get_teacher_10(excel_formatter):
+    result = excel_formatter.get_teachers("Беглов И.А., Верещагина Т.А.")
+    correct_result = ["Беглов И.А.", "Верещагина Т.А."]
+    assert result == correct_result
