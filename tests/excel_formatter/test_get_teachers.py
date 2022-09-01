@@ -1,5 +1,3 @@
-
-
 def test_get_teacher_0(excel_formatter):
     result = excel_formatter.get_teachers("Козлова Г.Г.\nИсаев Р.А.")
     correct_result = ["Козлова Г.Г.", "Исаев Р.А."]
@@ -48,6 +46,7 @@ def test_get_teacher_7(excel_formatter):
     result = excel_formatter.get_teachers("Рогачев Горелик")
     correct_result = ["Рогачев", "Горелик"]
     assert result == correct_result
+
 
 def test_get_teacher_8(excel_formatter):
     result = excel_formatter.get_teachers("Новосёлова Е.В.")

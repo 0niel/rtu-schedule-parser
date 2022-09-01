@@ -1,4 +1,3 @@
-
 from rtu_schedule_parser.constants import Campus
 from rtu_schedule_parser.schedule import Room
 

@@ -1,5 +1,3 @@
-
-
 def test_get_weeks_0(excel_formatter):
     result = excel_formatter.get_weeks(
         "кр. 3,17 н. Организация работы с технотронными документами\n3 н. Организация работы с технотронными документами",
@@ -268,4 +266,17 @@ def test_get_weeks_34(excel_formatter):
         "3,5 н. Введение в профессиональную деятельность \n7,9 н. Введение в профессиональную деятельность\n11,13 н. Введение в профессиональную деятельность деятельность\n15,17 н. Введение в профессиональную деятельность"
     )
     correct_result = [[3, 5], [7, 9], [11, 13], [15, 17]]
+    assert result == correct_result
+
+
+def test_get_weeks_35(excel_formatter):
+    result = excel_formatter.get_weeks(
+        """1,5,9,13 н. Речепреобразующие устройства
+
+3,7,11,15 н. Речепреобразующие устройства
+""",
+        is_even=False,
+        max_weeks=17,
+    )
+    correct_result = [[1, 5, 9, 13], [3, 7, 11, 15]]
     assert result == correct_result

@@ -1,4 +1,3 @@
-
 from rtu_schedule_parser.constants import LessonType
 
 

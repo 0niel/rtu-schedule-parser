@@ -4,19 +4,18 @@ import datetime
 import re
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Generator, Any
+from typing import Any, Generator
 
 from openpyxl import load_workbook
 
-from rtu_schedule_parser.constants import LessonType
+import rtu_schedule_parser.utils.academic_calendar as academic_calendar
 from rtu_schedule_parser.excel_formatter import ExcelFormatter
 from rtu_schedule_parser.formatter import Formatter
-from rtu_schedule_parser.schedule import Lesson, Schedule, LessonEmpty
+from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Schedule
 from rtu_schedule_parser.schedule_data import ScheduleData
-from rtu_schedule_parser.utils.academic_calendar import AcademicCalendar, Weekday
 
 
-class ColumnDataType(IntEnum):
+class _ColumnDataType(IntEnum):
     """
     Значения основаны на смещениях колонок для группы относительно названия группы:
 
@@ -45,7 +44,7 @@ class LessonCell:
     Информация о ячейке с расписанием занятий.
     """
 
-    weekday: Weekday
+    weekday: academic_calendar.Weekday
     num: int  # Номер пары
     time_start: datetime.time  # Время начала занятия
     time_end: datetime.time  # Время окончания занятия
@@ -57,7 +56,7 @@ class ExcelScheduleParser:
     RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
 
     def __init__(
-            self, document_path: str, formatter: Formatter = ExcelFormatter()
+        self, document_path: str, formatter: Formatter = ExcelFormatter()
     ) -> None:
         self.__document_path = document_path
         self.__formatter = formatter
@@ -93,7 +92,7 @@ class ExcelScheduleParser:
         return None
 
     def __get_lesson_element(
-            self, lesson_length: int, lesson_index: int, elements: list[object]
+        self, lesson_length: int, lesson_index: int, elements: list[object]
     ) -> Any:
         """
         Получить элемент для занятия. Бывает такое, что в расписании количество аудиторий или преподавателей,
@@ -109,23 +108,23 @@ class ExcelScheduleParser:
             raise ValueError("Invalid lesson length")
 
     def __parse_lessons(
-            self, group_column: int, lesson_cells: list[LessonCell]
+        self, group_column: int, lesson_cells: list[LessonCell]
     ) -> Generator[Lesson | LessonEmpty, None, None]:
         group_column -= 1
         for lesson_cell in lesson_cells:
             row = self.__worksheet[lesson_cell.row_index]
 
-            subjects = row[group_column + ColumnDataType.SUBJECT].value
-            types = row[group_column + ColumnDataType.TYPE].value
-            teachers = str(row[group_column + ColumnDataType.TEACHER].value)
-            rooms = row[group_column + ColumnDataType.ROOM].value
+            subjects = row[group_column + _ColumnDataType.SUBJECT].value
+            types = row[group_column + _ColumnDataType.TYPE].value
+            teachers = str(row[group_column + _ColumnDataType.TEACHER].value)
+            rooms = row[group_column + _ColumnDataType.ROOM].value
 
             if subjects is None:
                 yield LessonEmpty(
                     lesson_cell.num,
                     lesson_cell.weekday,
                     lesson_cell.time_start,
-                    lesson_cell.time_end
+                    lesson_cell.time_end,
                 )
             else:
                 # Стоит ли предмет на чётных неделях
@@ -133,8 +132,12 @@ class ExcelScheduleParser:
 
                 lesson_names = self.__formatter.get_lessons(subjects)
                 lesson_weeks = self.__formatter.get_weeks(
-                    subjects, is_even_week, AcademicCalendar.MAX_WEEKS
+                    subjects, is_even_week, academic_calendar.MAX_WEEKS
                 )
+
+                if len(lesson_weeks) == 0:
+                    raise ValueError("Invalid lesson weeks")
+
                 lesson_teachers, lesson_types, lesson_rooms = None, None, None
                 if teachers:
                     lesson_teachers = self.__formatter.get_teachers(teachers)
@@ -146,8 +149,16 @@ class ExcelScheduleParser:
                 lessons_len = len(lesson_names)
 
                 for i in range(lessons_len):
-                    lesson_type = self.__get_lesson_element(lessons_len, i, lesson_types) if lesson_types else None
-                    lesson_room = self.__get_lesson_element(lessons_len, i, lesson_rooms) if lesson_rooms else None
+                    lesson_type = (
+                        self.__get_lesson_element(lessons_len, i, lesson_types)
+                        if lesson_types
+                        else None
+                    )
+                    lesson_room = (
+                        self.__get_lesson_element(lessons_len, i, lesson_rooms)
+                        if lesson_rooms
+                        else None
+                    )
                     lesson_teachers = lesson_teachers if lesson_teachers else []
 
                     yield Lesson(
@@ -164,7 +175,7 @@ class ExcelScheduleParser:
                     )
 
     def __get_lesson_cells(
-            self, group_cell_index: int, group_row_index: int
+        self, group_cell_index: int, group_row_index: int
     ) -> Generator[LessonCell, None, None]:
         """
         Возвращает ячейки с расписанием занятий.
@@ -193,17 +204,21 @@ class ExcelScheduleParser:
 
             row = self.__worksheet[i]
 
-            weekday_cell_value = row[group_cell_index + ColumnDataType.WEEKDAY].value
+            weekday_cell_value = row[group_cell_index + _ColumnDataType.WEEKDAY].value
             lesson_num_cell_value = row[
-                group_cell_index + ColumnDataType.LESSON_NUMBER
-                ].value
-            start_time_cell_value = row[group_cell_index + ColumnDataType.START_TIME].value
-            end_time_cell_value = row[group_cell_index + ColumnDataType.END_TIME].value
-            week_cell_value = row[group_cell_index + ColumnDataType.WEEK].value
+                group_cell_index + _ColumnDataType.LESSON_NUMBER
+            ].value
+            start_time_cell_value = row[
+                group_cell_index + _ColumnDataType.START_TIME
+            ].value
+            end_time_cell_value = row[group_cell_index + _ColumnDataType.END_TIME].value
+            week_cell_value = row[group_cell_index + _ColumnDataType.WEEK].value
 
             try:
                 if weekday_cell_value:
-                    weekday = Weekday.get_weekday_by_name(weekday_cell_value.lower())
+                    weekday = academic_calendar.Weekday.get_weekday_by_name(
+                        weekday_cell_value.lower()
+                    )
 
                 if lesson_num_cell_value:
                     lesson_num = int(lesson_num_cell_value)

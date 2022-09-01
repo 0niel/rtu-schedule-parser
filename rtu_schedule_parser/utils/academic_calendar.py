@@ -1,4 +1,8 @@
+import datetime
+from dataclasses import dataclass
 from enum import Enum
+
+MAX_WEEKS = 17
 
 
 class Weekday(Enum):
@@ -25,20 +29,15 @@ class Weekday(Enum):
         raise ValueError("No weekday with name {}".format(name))
 
 
-class AcademicCalendar:
-    MAX_WEEKS = 17
+@dataclass
+class Period:
+    year_start: int
+    year_end: int
+    semester: int
 
-    MONTHS = {
-        "январь": 1,
-        "февраль": 2,
-        "март": 3,
-        "апрель": 4,
-        "май": 5,
-        "июнь": 6,
-        "июлю": 7,
-        "август": 8,
-        "сентябрь": 9,
-        "октябрь": 10,
-        "ноябрь": 11,
-        "декабрь": 12,
-    }
+
+def get_period(date: datetime.date) -> Period:
+    if date.month >= 7 and date.day >= 15:
+        return Period(date.year, date.year + 1, 1)
+    else:
+        return Period(date.year - 1, date.year, 2)

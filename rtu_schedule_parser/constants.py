@@ -1,6 +1,31 @@
 from enum import Enum, IntEnum
 
 
+class Degree(IntEnum):
+    BACHELOR = 1
+    MASTER = 2
+    PHD = 3
+    COLLEGE = 4
+
+
+class RoomType(IntEnum):
+    """Перечисление возможных типов аудиторий."""
+
+    __slots__ = ()
+
+    # Тип аудиторий по умолчанию. Используется для лекций и практик.
+    AUDITORY = 1
+
+    # Аудитория с компьютерами.
+    COMPUTERS = 2
+
+    # Аудитория для лабораторных работ.
+    LABORATORY = 3
+
+    # Дистанционно (в СДО).
+    DISTANTLY = 4
+
+
 class LessonType(Enum):
     """Перечисление возможных типов занятий."""
 
@@ -11,22 +36,8 @@ class LessonType(Enum):
     INDIVIDUAL_WORK = "с/р"
     LABORATORY_WORK = "лаб"
 
-    @staticmethod
-    def get_by_name(lesson_type: str) -> "LessonType":
-        """Получить тип занятия по строковому представлению."""
-        if lesson_type == LessonType.PRACTICE.value:
-            return LessonType.PRACTICE
-        elif lesson_type == LessonType.LECTURE.value or lesson_type == "лк":
-            return LessonType.LECTURE
-        elif lesson_type == LessonType.INDIVIDUAL_WORK.value:
-            return LessonType.INDIVIDUAL_WORK
-        elif lesson_type == LessonType.LABORATORY_WORK.value:
-            return LessonType.LABORATORY_WORK
-        else:
-            raise ValueError(f"Unknown lesson type: {lesson_type}")
 
-
-class ScheduleDocumentType(IntEnum):
+class ScheduleType(IntEnum):
     """
     Перечисление типов документов расписания.
     """
@@ -79,18 +90,18 @@ class Institute(Enum):
         return self.value[1]
 
     @staticmethod
-    def get_institute_by_name(name):
+    def get_by_name(name):
         for institute in Institute:
             if institute.name == name:
                 return institute
-        return None
+        raise ValueError(f"Unknown institute name: {name}")
 
     @staticmethod
-    def get_institute_by_short_name(short_name):
+    def get_by_short_name(short_name):
         for institute in Institute:
             if institute.short_name == short_name:
                 return institute
-        return None
+        raise ValueError(f"Unknown institute short name: {short_name}")
 
 
 class Campus(Enum):

@@ -1,10 +1,6 @@
 import os
+
 from rtu_schedule_parser.excel_parser import ExcelScheduleParser
-from sqlalchemy import create_engine
-
-
-engine = create_engine('sqlite:///C:/Users/foran/Desktop/schedules/schedule.db', echo=False)
-
 
 if __name__ == "__main__":
     files_dir = "C:\\Users\\foran\\Desktop\\schedules"

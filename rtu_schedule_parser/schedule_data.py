@@ -1,10 +1,10 @@
-from rtu_schedule_parser.schedule import Schedule, Room, LessonEmpty
 import pandas as pd
+
+from rtu_schedule_parser.schedule import LessonEmpty, Room, Schedule
 
 
 class ScheduleData:
-    def __init__(self, schedule: list[Schedule
-    ]):
+    def __init__(self, schedule: list[Schedule]):
         self._schedule = schedule
         self._df = self._generate_dataframe()
 
@@ -17,10 +17,8 @@ class ScheduleData:
             if df is None:
                 df = dataframe
             else:
-                # if df has columns, concat dataframe to df
                 df = pd.concat([df, dataframe])
 
-        # add integer index to dataframe
         df.index = range(len(df))
 
         return df
@@ -61,7 +59,10 @@ class ScheduleData:
         return self._schedule
 
     def get_group_schedule(self, group: str):
-        pass
+        for schedule in self._schedule:
+            if schedule.group == group:
+                return schedule
+        raise ValueError("Group not found")
 
     def get_units(self):
         pass
