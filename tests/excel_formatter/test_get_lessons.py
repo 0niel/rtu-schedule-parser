@@ -3,7 +3,6 @@
 # 8,12 н Защита интелл. собственности в машиностроении
 from rtu_schedule_parser.constants import LessonType
 
-
 # todo:
 # 11,15 н/ 17 н Технологии обработки материалов концентрированными потоками энергии	[] лек/ лр
 
@@ -459,7 +458,11 @@ def test_get_lessons_47(excel_formatter):
         "2п/г,1п/г"
     )
     correct_result = [
-        ("Технические методы диагностических исследований и лечебных воздействий", None, None)
+        (
+            "Технические методы диагностических исследований и лечебных воздействий",
+            None,
+            None,
+        )
     ]
     assert result == correct_result
 
@@ -472,15 +475,13 @@ def test_get_lessons_48(excel_formatter):
 """
     )
     correct_result = [
-        ("Электротехника", None, None),  ("Прикладная механика", None, None)
+        ("Электротехника", None, None),
+        ("Прикладная механика", None, None),
     ]
     assert result == correct_result
 
 
 def test_get_lessons_49(excel_formatter):
-    result = excel_formatter.get_lessons(
-        "4,8,12,16 н. Электротехника\n2 п/г"
-    )
+    result = excel_formatter.get_lessons("4,8,12,16 н. Электротехника\n2 п/г")
     correct_result = [("Электротехника", None, 2)]
     assert result == correct_result
-

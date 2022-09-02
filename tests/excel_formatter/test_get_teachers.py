@@ -64,3 +64,8 @@ def test_get_teacher_10(excel_formatter):
     result = excel_formatter.get_teachers("Беглов И.А., Верещагина Т.А.")
     correct_result = ["Беглов И.А.", "Верещагина Т.А."]
     assert result == correct_result
+
+
+def test_get_teacher_11(excel_formatter):
+    result = excel_formatter.get_teachers("123")
+    assert result == []

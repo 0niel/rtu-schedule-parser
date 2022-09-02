@@ -31,4 +31,4 @@ def schedule_downloader() -> ScheduleDownloader:
     else:
         os.mkdir(dir)
 
-    return ScheduleDownloader(base_file_dir="test")
+    return ScheduleDownloader(base_file_dir=dir)

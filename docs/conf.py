@@ -1,8 +1,6 @@
 import os
 import sys
-
-from typing import Dict, Any
-
+from typing import Any, Dict
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -15,7 +13,6 @@ sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("_themes"))
 
 import rtu_schedule_parser
-
 
 # Configuration file for the Sphinx documentation builder.
 #

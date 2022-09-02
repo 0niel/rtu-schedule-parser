@@ -47,3 +47,14 @@ def test_get_docs_3(schedule_downloader):
 
     for url in urls:
         assert url.startswith("http")
+
+
+def test_get_docs_4(schedule_downloader):
+    result = schedule_downloader.get_documents(
+        specific_degrees={Degree.BACHELOR},
+        specific_schedule_types={
+            ScheduleType.SEMESTER,
+        },
+        specific_institutes={Institute.IPTIP},
+    )
+    assert len(result) == 9

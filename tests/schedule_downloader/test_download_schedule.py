@@ -4,13 +4,13 @@ import os
 def test_download_schedule_0(schedule_downloader):
     result = schedule_downloader.get_documents()
     document = result[0]
-    path, replaced = schedule_downloader.download(document)
+    path, downloaded = schedule_downloader.download(document)
     assert path is not None
-    assert replaced is False
+    assert downloaded is True
     assert os.path.exists(path)
-    path, replaced = schedule_downloader.download(document)
+    path, downloaded = schedule_downloader.download(document)
     assert path is not None
-    assert replaced is False
+    assert downloaded is False
     assert os.path.exists(path)
     with open(path, "rb") as f:
         file_size = len(f.read())
@@ -29,4 +29,4 @@ def test_download_schedule_1(schedule_downloader):
             file_size = len(f.read())
         assert file_size > 0
         assert doc[0] is not None
-        assert doc[2] is False
+        assert doc[2] is True

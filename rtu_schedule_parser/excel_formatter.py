@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from .constants import Campus, LessonType
+from .constants import Campus, LessonType, RoomType
 from .formatter import Formatter
 from .schedule import Room
 
@@ -32,12 +32,21 @@ class ExcelFormatter(Formatter):
 
     _RE_SEPARATORS = r" {2,}|\n|,|;"
 
-    CAMPUSES_SHORT_NAMS = {
+    # Сокращённые название кампусов.
+    CAMPUSES_SHORT_NAMES = {
         "МП-1": Campus.MP_1,
         "В-78": Campus.V_78,
         "В-86": Campus.V_86,
         "С-20": Campus.S_20,
         "СГ-22": Campus.SG_22,
+    }
+
+    # Сокращённые названия типов аудиторий.
+    ROOM_TYPE_SHORT_NAMES = {
+        "ауд": RoomType.AUDITORY,
+        "лаб": RoomType.LABORATORY,
+        "комп": RoomType.COMPUTERS,
+        "физ": RoomType.SPORT,
     }
 
     def __format_subgroups_and_type(self, lesson: str) -> list:
@@ -167,10 +176,7 @@ class ExcelFormatter(Formatter):
                 #
                 # Регулярка для раделения дисциплин, написанных в одну строку. Захватывает номера недели, с помощью
                 # позиций которых можно разделить предметы
-                re_one_line_lessons = (
-                    r"(?:\d+[-,\s.]*)+(?:(?:нед|н)|\b)[\. ]*(?:\(?(?:кроме|кр)? *(?:\d+[-,\s.]*)+("
-                    r"?:(?:нед|н)|\b)[\. ])(?![.\s,\-\d]*(?:подгруппа|подгруп|подгр|п\/г|группа|гр)) "
-                )
+                re_one_line_lessons = r"(?:\d+[-,\s.]*)+(?:(?:нед|н)|\b)[\. ]*(?:\(?(?:кроме|кр)? *(?:\d+[-,\s.]*)+(?:(?:нед|н)|\b)[\. ])(?![.\s,\-\d]*(?:подгруппа|подгруп|подгр|п\/г|группа|гр))"
                 found = [x for x in re.finditer(re_one_line_lessons, lessons)]
                 length = len(found)
                 if length > 1:
@@ -278,7 +284,7 @@ class ExcelFormatter(Formatter):
         )
         names = re.sub(r"^((\s*\d\s*п/г,*){2})$", "", names, flags=re.MULTILINE)
         # replace \n to space
-        names = re.sub(r"(\n)\d\s*п/г", r"\1 ", names)
+        names = re.sub(r"(\n)(\d\s*п/г)", r" \g<2>", names, flags=re.MULTILINE)
 
         return names
 
@@ -305,7 +311,23 @@ class ExcelFormatter(Formatter):
 
     def get_rooms(self, rooms_cell_value: str) -> list[Room]:
         result = []
-        for short_name in self.CAMPUSES_SHORT_NAMS:
+
+        # Первая группа - тип аудитории, вторая - номер аудитории, третья - сокращенное название кампуса
+        re_rooms = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
+        rooms_list = re.findall(re_rooms, rooms_cell_value)
+        for room in rooms_list:
+            result.append(
+                Room(
+                    room[1],
+                    self.CAMPUSES_SHORT_NAMES[room[2]],
+                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
+                )
+            )
+
+        if result:
+            return result
+
+        for short_name in self.CAMPUSES_SHORT_NAMES:
             res = re.findall(short_name, rooms_cell_value, flags=re.A)
             if res:
                 rooms = (
@@ -319,10 +341,10 @@ class ExcelFormatter(Formatter):
                     rooms,
                     flags=re.A,
                 )
-                result.append(Room(rooms, self.CAMPUSES_SHORT_NAMS[short_name]))
+                result.append(Room(rooms, self.CAMPUSES_SHORT_NAMES[short_name], None))
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
-            result = [Room(room, None) for room in rooms if room]
+            result = [Room(room, None, None) for room in rooms if room]
         return result
 
     def get_teachers(self, names_cell_value: str) -> list[str]:
@@ -440,7 +462,9 @@ class ExcelFormatter(Formatter):
                         else:
                             total_weeks.append(i)
                 else:
-                    raise Exception("No max_weeks specified")
+                    raise ValueError(
+                        "No weeks specified for lesson. Please specify max_weeks parameter"
+                    )
 
             result.append(total_weeks)
 

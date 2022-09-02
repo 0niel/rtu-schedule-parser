@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from rtu_schedule_parser.constants import Campus, LessonType
+from rtu_schedule_parser.constants import Campus, LessonType, RoomType
 from rtu_schedule_parser.utils.academic_calendar import Weekday
 
 
@@ -14,6 +14,7 @@ from rtu_schedule_parser.utils.academic_calendar import Weekday
 class Room:
     name: str
     campus: Campus | None = None
+    room_type: RoomType | None = None
 
 
 @dataclass

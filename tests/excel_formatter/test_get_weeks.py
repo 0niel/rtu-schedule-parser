@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_get_weeks_0(excel_formatter):
     result = excel_formatter.get_weeks(
         "кр. 3,17 н. Организация работы с технотронными документами\n3 н. Организация работы с технотронными документами",
@@ -280,3 +283,8 @@ def test_get_weeks_35(excel_formatter):
     )
     correct_result = [[1, 5, 9, 13], [3, 7, 11, 15]]
     assert result == correct_result
+
+
+def test_get_weeks_36(excel_formatter):
+    with pytest.raises(ValueError):
+        excel_formatter.get_weeks("Речепреобразующие устройства")

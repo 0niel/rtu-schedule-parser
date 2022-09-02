@@ -25,6 +25,9 @@ class RoomType(IntEnum):
     # Дистанционно (в СДО).
     DISTANTLY = 4
 
+    # Спортивный зал (физкультура).
+    SPORT = 5
+
 
 class LessonType(Enum):
     """Перечисление возможных типов занятий."""

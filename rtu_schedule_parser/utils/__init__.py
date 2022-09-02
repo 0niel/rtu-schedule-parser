@@ -1,1 +1,1 @@
-from .academic_calendar import Weekday, Period, get_period
+from .academic_calendar import Period, Weekday, get_period

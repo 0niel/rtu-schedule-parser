@@ -244,7 +244,9 @@ class ExcelScheduleParser:
                     week = 2
 
                 if weekday and lesson_num and time_start and time_end and week:
-                    yield _LessonCell(weekday, lesson_num, time_start, time_end, week, i)
+                    yield _LessonCell(
+                        weekday, lesson_num, time_start, time_end, week, i
+                    )
 
             except ValueError:
                 pass
