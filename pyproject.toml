@@ -5,7 +5,7 @@ description = ""
 authors = ["Sergey Dmitriev <51058739+0niel@users.noreply.github.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9"
 openpyxl = "^3.0.10"
 requests = "^2.27.1"
 beautifulsoup4 = "^4.11.1"
