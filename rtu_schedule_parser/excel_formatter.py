@@ -39,6 +39,7 @@ class ExcelFormatter(Formatter):
         "В-86": Campus.V_86,
         "С-20": Campus.S_20,
         "СГ-22": Campus.SG_22,
+        "СДО": Campus.ONLINE,
     }
 
     # Сокращённые названия типов аудиторий.
@@ -316,13 +317,22 @@ class ExcelFormatter(Formatter):
         re_rooms = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
         rooms_list = re.findall(re_rooms, rooms_cell_value)
         for room in rooms_list:
-            result.append(
-                Room(
-                    room[1],
-                    self.CAMPUSES_SHORT_NAMES[room[2]],
-                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
+            try:
+                result.append(
+                    Room(
+                        room[1],
+                        self.CAMPUSES_SHORT_NAMES[room[2]],
+                        self.ROOM_TYPE_SHORT_NAMES[room[0]],
+                    )
                 )
-            )
+            except KeyError:
+                result.append(
+                    Room(
+                        room[1],
+                        None,
+                        self.ROOM_TYPE_SHORT_NAMES[room[0]],
+                    )
+                )
 
         if result:
             return result

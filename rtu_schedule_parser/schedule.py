@@ -58,6 +58,7 @@ class Schedule:
                 "type",
                 "room",
                 "campus",
+                "room_type",
                 "subgroup",
             ]
         )
@@ -69,6 +70,8 @@ class Schedule:
                 lesson_campus = (
                     lesson_campus.value if lesson_campus is not None else np.nan
                 )
+                lesson_room_type = lesson.room.room_type if lesson.room is not None else None
+                lesson_room_type = lesson_room_type.value if lesson_room_type is not None else np.nan
                 weeks = ",".join(str(week) for week in lesson.weeks)
                 teachers = ",".join(teacher for teacher in lesson.teachers)
                 lesson_type = lesson.type.value if lesson.type is not None else np.nan
@@ -84,6 +87,7 @@ class Schedule:
                     lesson_type,
                     lesson_room,
                     lesson_campus,
+                    lesson_room_type,
                     lesson.subgroup if lesson.subgroup else np.nan,
                 ]
 

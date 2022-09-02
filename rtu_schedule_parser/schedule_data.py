@@ -23,6 +23,17 @@ class ScheduleData:
 
         return df
 
+    def append(self, schedule: Schedule):
+        self._schedule.append(schedule)
+        self._df = self._generate_dataframe()
+
+    def extend(self, schedule: list[Schedule]):
+        self._schedule.extend(schedule)
+        self._df = self._generate_dataframe()
+
+    def get_schedule(self):
+        return self._schedule
+
     def get_dataframe(self) -> pd.DataFrame:
         return self._df
 

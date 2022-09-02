@@ -8,25 +8,22 @@ class Degree(IntEnum):
     COLLEGE = 4
 
 
-class RoomType(IntEnum):
+class RoomType(Enum):
     """Перечисление возможных типов аудиторий."""
 
     __slots__ = ()
 
     # Тип аудиторий по умолчанию. Используется для лекций и практик.
-    AUDITORY = 1
+    AUDITORY = "ауд"
 
     # Аудитория с компьютерами.
-    COMPUTERS = 2
+    COMPUTERS = "комп"
 
     # Аудитория для лабораторных работ.
-    LABORATORY = 3
-
-    # Дистанционно (в СДО).
-    DISTANTLY = 4
+    LABORATORY = "лаб"
 
     # Спортивный зал (физкультура).
-    SPORT = 5
+    SPORT = "физ"
 
 
 class LessonType(Enum):
@@ -119,3 +116,4 @@ class Campus(Enum):
     V_86 = "Проспект Вернадского, д.86"
     S_20 = "ул. Стромынка, 20"
     SG_22 = "5-я ул. Соколиной горы, д.22"
+    ONLINE = "СДО"

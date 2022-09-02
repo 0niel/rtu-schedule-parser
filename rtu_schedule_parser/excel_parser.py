@@ -7,6 +7,7 @@ from enum import IntEnum
 from typing import Any, Generator
 
 from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
 from rtu_schedule_parser.excel_formatter import ExcelFormatter
@@ -64,30 +65,30 @@ class ExcelScheduleParser:
         self.__document_path = document_path
         self.__formatter = formatter
         self.__workbook = None
-        self.__worksheet = None
+        self.__worksheets = None
 
-    def __open_worksheet(self):
+    def __open_worksheets(self):
         self.__workbook = load_workbook(self.__document_path)
-        self.__worksheet = self.__workbook.active
+        self.__worksheets = self.__workbook.worksheets
 
-    def __get_group_columns(self, group_row_index: int) -> list[tuple[str, int]]:
+    def __get_group_columns(self, group_row_index: int, worksheet: Worksheet) -> list[tuple[str, int]]:
         """
         Возвращает названия групп и номера колонок для них
         """
         group_columns = []
 
-        for row in self.__worksheet.iter_rows(group_row_index):
+        for row in worksheet.iter_rows(group_row_index):
             for cell in row:
                 if self.RE_GROUP_NAME.match(str(cell.value)):
                     group_columns.append((cell.value, cell.col_idx))
 
         return group_columns
 
-    def __find_group_row(self) -> int | None:
+    def __find_group_row(self, worksheet) -> int | None:
         """
         Поиск строки с названием группы
         """
-        for row in self.__worksheet.iter_rows(max_row=20, max_col=50):
+        for row in worksheet.iter_rows(max_row=20, max_col=50):
             for cell in row:
                 if self.RE_GROUP_NAME.match(str(cell.value)):
                     return cell.row
@@ -111,18 +112,19 @@ class ExcelScheduleParser:
             raise ValueError("Invalid lesson length")
 
     def __parse_lessons(
-        self, group_column: int, lesson_cells: list[_LessonCell]
+        self, group_column: int, lesson_cells: list[_LessonCell],
+            worksheet: Worksheet
     ) -> Generator[Lesson | LessonEmpty, None, None]:
         group_column -= 1
         for lesson_cell in lesson_cells:
-            row = self.__worksheet[lesson_cell.row_index]
+            row = worksheet[lesson_cell.row_index]
 
             subjects = row[group_column + _ColumnDataType.SUBJECT].value
             types = row[group_column + _ColumnDataType.TYPE].value
             teachers = str(row[group_column + _ColumnDataType.TEACHER].value)
             rooms = row[group_column + _ColumnDataType.ROOM].value
 
-            if subjects is None:
+            if subjects is None or subjects == "":
                 yield LessonEmpty(
                     lesson_cell.num,
                     lesson_cell.weekday,
@@ -178,7 +180,7 @@ class ExcelScheduleParser:
                     )
 
     def __get_lesson_cells(
-        self, group_cell_index: int, group_row_index: int
+        self, group_cell_index: int, group_row_index: int, worksheet: Worksheet
     ) -> Generator[_LessonCell, None, None]:
         """
         Возвращает ячейки с расписанием занятий.
@@ -187,7 +189,7 @@ class ExcelScheduleParser:
         # После строки с названием групп идет заголовочная строка с названиями колонок
         initial_row_num = group_row_index + 2
 
-        row_count = self.__worksheet.max_row
+        row_count = worksheet.max_row
         row_count = 150 if row_count > 150 else row_count
 
         weekday, lesson_num, time_start, time_end = None, None, None, None
@@ -205,7 +207,7 @@ class ExcelScheduleParser:
 
             week = None
 
-            row = self.__worksheet[i]
+            row = worksheet[i]
 
             weekday_cell_value = row[group_cell_index + _ColumnDataType.WEEKDAY].value
             lesson_num_cell_value = row[
@@ -252,22 +254,23 @@ class ExcelScheduleParser:
                 pass
 
     def parse(self) -> ScheduleData:
-        self.__open_worksheet()
-
-        group_name_row = self.__find_group_row()
-        if group_name_row is None:
-            raise Exception("The row with the group name was not found")
-
-        group_columns = self.__get_group_columns(group_name_row)
-
-        first_group_column = group_columns[0][1]
-        lesson_cells = list(self.__get_lesson_cells(first_group_column, group_name_row))
+        self.__open_worksheets()
 
         schedule = []
 
-        for group_column in group_columns:
-            lessons = list(self.__parse_lessons(group_column[1], lesson_cells))
-            group_name = group_column[0]
-            schedule.append(Schedule(group_name, lessons))
+        for worksheet in self.__worksheets:
+            group_name_row = self.__find_group_row(worksheet)
+            if group_name_row is None:
+                raise Exception("The row with the group name was not found")
+
+            group_columns = self.__get_group_columns(group_name_row, worksheet)
+
+            first_group_column = group_columns[0][1]
+            lesson_cells = list(self.__get_lesson_cells(first_group_column, group_name_row, worksheet))
+
+            for group_column in group_columns:
+                lessons = list(self.__parse_lessons(group_column[1], lesson_cells, worksheet))
+                group_name = group_column[0]
+                schedule.append(Schedule(group_name, lessons))
 
         return ScheduleData(schedule)
