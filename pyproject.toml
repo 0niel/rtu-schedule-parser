@@ -10,9 +10,6 @@ openpyxl = "^3.0.10"
 requests = "^2.27.1"
 beautifulsoup4 = "^4.11.1"
 pandas = "^1.4.3"
-SQLAlchemy = "^1.4.40"
-Sphinx = "^5.1.1"
-furo = "^2022.6.21"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.942"
@@ -22,6 +19,8 @@ autoflake = "^1.4"
 flake8 = "^4.0.1"
 pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
+Sphinx = "^5.1.1"
+furo = "^2022.6.21"
 
 [tool.black]
 line-length = 88
