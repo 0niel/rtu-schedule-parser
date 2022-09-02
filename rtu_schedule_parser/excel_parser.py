@@ -14,6 +14,8 @@ from rtu_schedule_parser.formatter import Formatter
 from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Schedule
 from rtu_schedule_parser.schedule_data import ScheduleData
 
+__all__ = ["ExcelScheduleParser"]
+
 
 class _ColumnDataType(IntEnum):
     """
@@ -39,7 +41,7 @@ class _ColumnDataType(IntEnum):
 
 
 @dataclass
-class LessonCell:
+class _LessonCell:
     """
     Информация о ячейке с расписанием занятий.
     """
@@ -53,6 +55,7 @@ class LessonCell:
 
 
 class ExcelScheduleParser:
+    # Паттерн названия группы.
     RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
 
     def __init__(
@@ -108,7 +111,7 @@ class ExcelScheduleParser:
             raise ValueError("Invalid lesson length")
 
     def __parse_lessons(
-        self, group_column: int, lesson_cells: list[LessonCell]
+        self, group_column: int, lesson_cells: list[_LessonCell]
     ) -> Generator[Lesson | LessonEmpty, None, None]:
         group_column -= 1
         for lesson_cell in lesson_cells:
@@ -176,7 +179,7 @@ class ExcelScheduleParser:
 
     def __get_lesson_cells(
         self, group_cell_index: int, group_row_index: int
-    ) -> Generator[LessonCell, None, None]:
+    ) -> Generator[_LessonCell, None, None]:
         """
         Возвращает ячейки с расписанием занятий.
         """
@@ -241,7 +244,7 @@ class ExcelScheduleParser:
                     week = 2
 
                 if weekday and lesson_num and time_start and time_end and week:
-                    yield LessonCell(weekday, lesson_num, time_start, time_end, week, i)
+                    yield _LessonCell(weekday, lesson_num, time_start, time_end, week, i)
 
             except ValueError:
                 pass

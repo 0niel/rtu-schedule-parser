@@ -11,26 +11,26 @@ class ExcelFormatter(Formatter):
     """Реализация форматирования ячеек excel таблицы расписания к нужному формату."""
 
     # числа через запятую или тире
-    RE_NUMBERS = r"(?:\d+[-,\s.]*)+"
+    _RE_NUMBERS = r"(?:\d+[-,\s.]*)+"
 
     # слова исключения недель
-    RE_EXCLUDE_WEEKS = r"\W*(?:кр|кроме)(?:\.|\b)"
+    _RE_EXCLUDE_WEEKS = r"\W*(?:кр|кроме)(?:\.|\b)"
 
-    RE_SUBGROUPS = r"(подгруппа|подгруп|подгр|п\/г|группа|гр)"
+    _RE_SUBGROUPS = r"(подгруппа|подгруп|подгр|п\/г|группа|гр)"
 
     # слова включения недель, игнорирование подгрупп
-    RE_WEEKS = rf"{RE_NUMBERS}\s*(?:(?:нед|н)|\W)(?![.\s\d,-]*{RE_SUBGROUPS})[.\s]*"
+    _RE_WEEKS = rf"{_RE_NUMBERS}\s*(?:(?:нед|н)|\W)(?![.\s\d,-]*{_RE_SUBGROUPS})[.\s]*"
 
     # типы проводимого предмета
-    RE_LESSON_TYPES = r"(?:\b(лк|пр|лек|лаб)\b)"
+    _RE_LESSON_TYPES = r"(?:\b(лк|пр|лек|лаб)\b)"
 
     # ненужные символы в начале строки
-    RE_TRASH_START = r"(\A\W+\s*)"
+    _RE_TRASH_START = r"(\A\W+\s*)"
 
     # ненужные символы в конце строки
-    RE_TRASH_END = r"([-,_.\+;]+$)"
+    _RE_TRASH_END = r"([-,_.\+;]+$)"
 
-    RE_SEPARATORS = r" {2,}|\n|,|;"
+    _RE_SEPARATORS = r" {2,}|\n|,|;"
 
     CAMPUSES_SHORT_NAMS = {
         "МП-1": Campus.MP_1,
@@ -65,7 +65,7 @@ class ExcelFormatter(Formatter):
         # информационного общества
         # группа 1 - номера недель, группа 2 - тип предмета
         regexp_4 = (
-            rf"({self.RE_NUMBERS}(?:н|нед)?[. ]*)(?:[- ]*(лк|пр|лек|лаб)(\b|[; ]+))"
+            rf"({self._RE_NUMBERS}(?:н|нед)?[. ]*)(?:[- ]*(лк|пр|лек|лаб)(\b|[; ]+))"
         )
 
         expressions = [regexp_1, regexp_2, regexp_3, regexp_4]
@@ -192,7 +192,7 @@ class ExcelFormatter(Formatter):
 
     def __format_subgroups(self, lessons: list[str]) -> list[tuple[str, int | None]]:
         """Если подгруппа есть в строке, то возвращает подстроку без подгруппы и номер подгруппы."""
-        re_subgroups = self.RE_NUMBERS + self.RE_SUBGROUPS
+        re_subgroups = self._RE_NUMBERS + self._RE_SUBGROUPS
         new_lessons = []
         for i in range(len(lessons)):
             lesson = lessons[i]
@@ -292,11 +292,11 @@ class ExcelFormatter(Formatter):
     def __get_only_lesson_name(self, lesson):
         """Возвращает только название предмета, удаляя лишнюю информацию (напр., номера недель)"""
 
-        lesson = re.sub(self.RE_WEEKS, "", lesson)
-        lesson = re.sub(self.RE_EXCLUDE_WEEKS, "", lesson)
-        lesson = re.sub(self.RE_LESSON_TYPES, "", lesson)
-        lesson = re.sub(self.RE_TRASH_START, "", lesson)
-        lesson = re.sub(self.RE_TRASH_END, "", lesson)
+        lesson = re.sub(self._RE_WEEKS, "", lesson)
+        lesson = re.sub(self._RE_EXCLUDE_WEEKS, "", lesson)
+        lesson = re.sub(self._RE_LESSON_TYPES, "", lesson)
+        lesson = re.sub(self._RE_TRASH_START, "", lesson)
+        lesson = re.sub(self._RE_TRASH_END, "", lesson)
         lesson = lesson.strip()
 
         return lesson
@@ -339,7 +339,7 @@ class ExcelFormatter(Formatter):
             )
 
         # разделяем имена по разделителям
-        names = re.split(self.RE_SEPARATORS, teachers_names)
+        names = re.split(self._RE_SEPARATORS, teachers_names)
 
         if len(names) > 1:
             result = [name.strip() for name in names if name.strip() != ""]
@@ -453,7 +453,7 @@ class ExcelFormatter(Formatter):
         result = []
 
         for i in range(len(lessons)):
-            types = re.findall(self.RE_LESSON_TYPES, lessons[i][0])
+            types = re.findall(self._RE_LESSON_TYPES, lessons[i][0])
 
             if len(types) > 0:
                 lesson_type = self.__get_lesson_by_name(types[0].lower().strip())
@@ -472,7 +472,7 @@ class ExcelFormatter(Formatter):
         return [lesson for lesson in result if lesson[0].strip() != ""]
 
     def get_types(self, cell_value: str) -> list[LessonType]:
-        types = re.split(self.RE_SEPARATORS, cell_value)
+        types = re.split(self._RE_SEPARATORS, cell_value)
 
         return [
             self.__get_lesson_by_name(el.strip().lower()) for el in types if el != ""

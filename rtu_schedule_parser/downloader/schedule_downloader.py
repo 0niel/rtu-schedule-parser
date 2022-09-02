@@ -18,19 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class ScheduleDownloader:
+    # Ссылка на страницу с расписанием.
     SCHEDULE_URL = "https://www.mirea.ru/schedule/"
-
-    DEFAULT_USERAGENT = (
-        "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
-    )
-
-    # Заголовки, под которыми хранятся соответствующие типы документов на странице с расписанием. Документов и этих
-    # заголовков может не быть, например, если ещё нет расписания для сессии.
-    SCHEDULE_TYPE_HEADERS = {
-        ScheduleType.SEMESTER: "Расписание занятий",
-        ScheduleType.TEST_SESSION: "Расписание зачетной сессии",
-        ScheduleType.EXAM_SESSION: "Расписание экзаменационной сессии",
-    }
 
     # Папки, в которых будут храниться документы с расписанием для указанных типов.
     SCHEDULE_TYPE_FOLDERS = {
@@ -39,7 +28,19 @@ class ScheduleDownloader:
         ScheduleType.EXAM_SESSION: "exam_session",
     }
 
-    ALLOWED_EXTENSIONS = [".pdf", ".xls", ".xlsx"]
+    _DEFAULT_USERAGENT = (
+        "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
+    )
+
+    # Заголовки, под которыми хранятся соответствующие типы документов на странице с расписанием. Документов и этих
+    # заголовков может не быть, например, если ещё нет расписания для сессии.
+    _SCHEDULE_TYPE_HEADERS = {
+        ScheduleType.SEMESTER: "Расписание занятий",
+        ScheduleType.TEST_SESSION: "Расписание зачетной сессии",
+        ScheduleType.EXAM_SESSION: "Расписание экзаменационной сессии",
+    }
+
+    _ALLOWED_EXTENSIONS = [".pdf", ".xls", ".xlsx"]
 
     def __init__(
         self,
@@ -117,7 +118,7 @@ class ScheduleDownloader:
                 # название файла и его расширение
                 (file_root, file_ext) = os.path.splitext(file_name)
 
-                if file_ext not in self.ALLOWED_EXTENSIONS:
+                if file_ext not in self._ALLOWED_EXTENSIONS:
                     continue
 
                 subdir = self.SCHEDULE_TYPE_FOLDERS[document.schedule_type]
@@ -169,7 +170,7 @@ class ScheduleDownloader:
     ) -> list[str]:
         document_links = list()
 
-        document_type_title = self.SCHEDULE_TYPE_HEADERS[document_types]
+        document_type_title = self._SCHEDULE_TYPE_HEADERS[document_types]
         schedule_titles = element.find_all("b", class_="uk-h3")
         for title in schedule_titles:
             if document_type_title in title.text:
