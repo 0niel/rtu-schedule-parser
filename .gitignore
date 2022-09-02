@@ -39,3 +39,7 @@ coverage.xml
 *.pot
 # Sphinx documentation
 docs/_build/
+*.xls
+*.xlsx
+*.docx
+*.pdf
