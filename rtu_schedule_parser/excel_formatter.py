@@ -276,7 +276,9 @@ class ExcelFormatter(Formatter):
         names = re.sub(
             r"^\s*подготовка\s*$", "Военная подготовка", names, flags=re.MULTILINE
         )
-        names = re.sub(r"^\s*1\s*п/г,\s*2\s*п/г\s*$", "", names, flags=re.MULTILINE)
+        names = re.sub(r"^((\s*\d\s*п/г,*){2})$", "", names, flags=re.MULTILINE)
+        # replace \n to space
+        names = re.sub(r"(\n)\d\s*п/г", r"\1 ", names)
 
         return names
 
