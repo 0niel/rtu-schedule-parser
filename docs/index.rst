@@ -3,46 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to rtu-schedule-parser's documentation!
-===============================================
 
-.. module:: rtu_schedule_parser
+API Documentation
+=================
 
-.. module:: rtu_schedule_parser.academic_calendar
-
-.. module:: rtu_schedule_parser.downloader
-
-.. module:: rtu_schedule_parser.constants
-
-.. autoclass:: rtu_schedule_parser.ScheduleParser
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.Formatter
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.ExcelScheduleParser
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.ExcelScheduleParser
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.ExcelScheduleParser
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.Schedule
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.Lesson
-   :inherited-members:
-
-.. autoclass:: rtu_schedule_parser.ScheduleData
-   :inherited-members:
+Information on specific functions, classes, and methods.
 
 .. toctree::
-   :maxdepth: 2
    :glob:
 
-   *
+   api/*
+
 
 Indices and tables
 ==================

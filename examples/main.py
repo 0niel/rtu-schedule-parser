@@ -1,12 +1,15 @@
 import os
 
-from rtu_schedule_parser.excel_parser import ExcelScheduleParser
+from rtu_schedule_parser import ExcelScheduleParser
+from rtu_schedule_parser.constants import Degree, Institute
+from rtu_schedule_parser.downloader import ScheduleDownloader
 
 if __name__ == "__main__":
-    files_dir = "C:\\Users\\foran\\Desktop\\schedules"
-    for filename in os.listdir(files_dir):
-        parser = ExcelScheduleParser(os.path.join(files_dir, filename))
-        schedule = parser.parse()
-        df = schedule.get_dataframe()
-        new_file_path = os.path.join(files_dir, filename.split(".")[0])
-        df.to_csv(new_file_path + ".csv")
+    downloader = ScheduleDownloader()
+    iit_docs = downloader.get_documents(specific_degrees={Degree.BACHELOR}, specific_institutes={Institute.IIT})
+    downloaded = downloader.download_all(iit_docs)
+    print(downloaded)
+
+    for doc in downloaded:
+        schedule_data = ExcelScheduleParser(doc[1]).parse()
+        print(schedule_data.get_groups())
