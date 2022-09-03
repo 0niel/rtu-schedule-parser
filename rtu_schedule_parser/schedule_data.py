@@ -56,7 +56,8 @@ class ScheduleData:
     def get_groups(self) -> list[str]:
         groups = []
         for schedule in self._schedule:
-            groups.append(schedule.group)
+            if schedule.group not in groups:
+                groups.append(schedule.group)
 
         return groups
 
@@ -65,9 +66,6 @@ class ScheduleData:
 
     def get_course(self):
         pass
-
-    def get_schedule(self):
-        return self._schedule
 
     def get_group_schedule(self, group: str):
         for schedule in self._schedule:

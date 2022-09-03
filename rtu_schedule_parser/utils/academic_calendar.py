@@ -37,7 +37,7 @@ class Period:
 
 
 def get_period(date: datetime.date) -> Period:
-    if date.month >= 7 and date.day >= 15:
+    if date.month >= 7:
         return Period(date.year, date.year + 1, 1)
     else:
         return Period(date.year - 1, date.year, 2)
