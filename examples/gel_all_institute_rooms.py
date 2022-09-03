@@ -14,14 +14,18 @@ if __name__ == "__main__":
 
     # Download only if they are not downloaded yet.
     downloaded = downloader.download_all(iit_docs)
+    print(f"Downloaded {len(downloaded)} files")
 
+    # Create schedule with downloaded files
     schedules = None  # type: ScheduleData | None
     for doc in downloaded:
+        print(f"Processing document: {doc}")
         if schedules is None:
             schedules = ExcelScheduleParser(doc[1]).parse()
         else:
             schedules.extend(ExcelScheduleParser(doc[1]).parse().get_schedule())
 
+    # Initialize pandas dataframe
     df = schedules.get_dataframe()
     # get only room, room_type and campus from dataframe
     df = df[["room", "room_type", "campus"]]
@@ -29,6 +33,8 @@ if __name__ == "__main__":
     df = df.drop_duplicates()
     # sort by room name
     df = df.sort_values(by="room")
+    # replace default dataframe index by length index
+    df = df.reset_index(drop=True)
     # get current script dir
     current_dir = os.path.dirname(os.path.realpath(__file__))
     # save dataframe to csv
