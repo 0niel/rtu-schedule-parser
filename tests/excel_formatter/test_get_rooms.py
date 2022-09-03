@@ -63,3 +63,11 @@ def test_get_rooms_9(excel_formatter):
         Room("М-110", Campus.V_86, RoomType.LABORATORY),
     ]
     assert result == correct_result
+
+
+def test_get_rooms_10(excel_formatter):
+    result = excel_formatter.get_rooms("ауд. A-2 (В-78)")
+    correct_result = [
+        Room("А-2", Campus.V_78, RoomType.AUDITORY),
+    ]
+    assert result == correct_result

@@ -313,6 +313,16 @@ class ExcelFormatter(Formatter):
     def get_rooms(self, rooms_cell_value: str) -> list[Room]:
         result = []
 
+        en_to_ru_letters = {
+            "A": "А",
+            "B": "В",
+        }
+
+        # Заменяем буквы на кириллицу
+        rooms_cell_value = re.sub(
+            r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms_cell_value
+        )
+
         # Первая группа - тип аудитории, вторая - номер аудитории, третья - сокращенное название кампуса
         re_rooms = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
         rooms_list = re.findall(re_rooms, rooms_cell_value)
@@ -355,6 +365,7 @@ class ExcelFormatter(Formatter):
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
             result = [Room(room, None, None) for room in rooms if room]
+
         return result
 
     def get_teachers(self, names_cell_value: str) -> list[str]:
