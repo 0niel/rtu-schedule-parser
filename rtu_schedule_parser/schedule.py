@@ -6,12 +6,22 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from rtu_schedule_parser.constants import Campus, LessonType, RoomType
-from rtu_schedule_parser.utils.academic_calendar import Weekday
+from rtu_schedule_parser.constants import (
+    Campus,
+    Degree,
+    Institute,
+    LessonType,
+    RoomType,
+)
+from rtu_schedule_parser.utils.academic_calendar import Period, Weekday
 
 
 @dataclass
 class Room:
+    """
+    Room data class.
+    """
+
     name: str
     campus: Campus | None = None
     room_type: RoomType | None = None
@@ -19,6 +29,11 @@ class Room:
 
 @dataclass
 class Lesson:
+    """
+    Lesson data class. Contains information about lesson. This class is used for lessons that are not empty. For
+    empty lessons use `EmptyLesson` class.
+    """
+
     num: int
     name: str
     weeks: list[int]
@@ -33,18 +48,37 @@ class Lesson:
 
 @dataclass
 class LessonEmpty:
+    """
+    Empty lesson. This is a cell in the schedule table that does not contain any information about the lesson. Used
+    for filling schedule.
+    """
+
     num: int
     weekday: Weekday
     time_start: datetime.time
     time_end: datetime.time
 
 
-@dataclass
+@dataclass(frozen=True)
 class Schedule:
+    """
+    Schedule data class. Contains information about the schedule of a group. The schedule is a list of lessons. Each
+    lesson is a `Lesson` data class or `LessonEmpty` data class (if the cell in the schedule table is empty).
+    """
+
     group: str
     lessons: list[Lesson | LessonEmpty]
+    course: int
+    period: Period
+    institute: Institute
+    degree: Degree
 
     def to_dataframe(self):
+        """
+        Convert schedule to pandas dataframe. The dataframe contains the following columns: `group`, `lesson_num`,
+        `lesson`, `weeks`, `weekday`, `teachers`, `time_start`, `time_end`, `type`, `room`, `campus`, `room_type`,
+        `subgroup`.
+        """
         df = pd.DataFrame(
             columns=[
                 "group",
@@ -70,8 +104,12 @@ class Schedule:
                 lesson_campus = (
                     lesson_campus.value if lesson_campus is not None else np.nan
                 )
-                lesson_room_type = lesson.room.room_type if lesson.room is not None else None
-                lesson_room_type = lesson_room_type.value if lesson_room_type is not None else np.nan
+                lesson_room_type = (
+                    lesson.room.room_type if lesson.room is not None else None
+                )
+                lesson_room_type = (
+                    lesson_room_type.value if lesson_room_type is not None else np.nan
+                )
                 weeks = ",".join(str(week) for week in lesson.weeks)
                 teachers = ",".join(teacher for teacher in lesson.teachers)
                 lesson_type = lesson.type.value if lesson.type is not None else np.nan

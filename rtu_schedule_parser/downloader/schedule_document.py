@@ -3,6 +3,8 @@ from rtu_schedule_parser.utils import academic_calendar
 
 
 class ScheduleDocument:
+    """ """
+
     institute: Institute
     schedule_type: ScheduleType
     degree: Degree

@@ -9,25 +9,25 @@ class Degree(IntEnum):
 
 
 class RoomType(Enum):
-    """Перечисление возможных типов аудиторий."""
+    """Enumeration of room types."""
 
     __slots__ = ()
 
-    # Тип аудиторий по умолчанию. Используется для лекций и практик.
+    # Default room type. Usually used for lectures and seminars.
     AUDITORY = "ауд"
 
-    # Аудитория с компьютерами.
+    # Room type with computers.
     COMPUTERS = "комп"
 
-    # Аудитория для лабораторных работ.
+    # Room type for laboratories.
     LABORATORY = "лаб"
 
-    # Спортивный зал (физкультура).
+    # Room type for physical education.
     SPORT = "физ"
 
 
 class LessonType(Enum):
-    """Перечисление возможных типов занятий."""
+    """Enumeration of lesson types."""
 
     __slots__ = ()
 
@@ -39,27 +39,27 @@ class LessonType(Enum):
 
 class ScheduleType(IntEnum):
     """
-    Перечисление типов документов расписания.
+    Enumeration of schedule document types.
     """
 
     __slots__ = ()
 
-    # Стандартный документ расписания на семестр
+    # Default schedule type. Used for semester schedule.
     SEMESTER = 1
 
-    # Документ расписания зачётной сессии. Имеет вид как стандартный
-    # документ, но расписание только одной недели (зачётной)
+    # Document of the test session schedule. Has the same view as a standard document,
+    # but the schedule is only one week.
     TEST_SESSION = 2
 
-    # Документ расписания экзаменационной сессии
+    # Document of the exam session schedule.
     EXAM_SESSION = 3
 
 
 class Institute(Enum):
     """
-    Перечисление возможны учебных подразделений.
+    Enumeration of institutes.
 
-    Подробный список: https://www.mirea.ru/education/the-institutes-and-faculties/
+    Detailed information about institutes can be found here: https://www.mirea.ru/education/the-institutes-and-faculties/
     """
 
     __slots__ = ()
@@ -106,7 +106,7 @@ class Institute(Enum):
 
 class Campus(Enum):
     """
-    Перечисление возможных кампусов, в которых может проводиться занятие.
+    Enumeration of campuses.
     """
 
     __slots__ = ()

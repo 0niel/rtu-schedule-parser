@@ -8,31 +8,31 @@ from .schedule import Room
 
 
 class ExcelFormatter(Formatter):
-    """Реализация форматирования ячеек excel таблицы расписания к нужному формату."""
+    """Format the lesson name according to the specified rules."""
 
-    # числа через запятую или тире
+    # Numbers separated by commas or dashes
     _RE_NUMBERS = r"(?:\d+[-,\s.]*)+"
 
-    # слова исключения недель
+    # Exclude weeks words
     _RE_EXCLUDE_WEEKS = r"\W*(?:кр|кроме)(?:\.|\b)"
 
     _RE_SUBGROUPS = r"(подгруппа|подгруп|подгр|п\/г|группа|гр)"
 
-    # слова включения недель, игнорирование подгрупп
+    # Including weeks words, ignoring subgroups
     _RE_WEEKS = rf"{_RE_NUMBERS}\s*(?:(?:нед|н)|\W)(?![.\s\d,-]*{_RE_SUBGROUPS})[.\s]*"
 
-    # типы проводимого предмета
+    # Lesson type
     _RE_LESSON_TYPES = r"(?:\b(лк|пр|лек|лаб)\b)"
 
-    # ненужные символы в начале строки
+    # Unnecessary characters at the beginning of the line
     _RE_TRASH_START = r"(\A\W+\s*)"
 
-    # ненужные символы в конце строки
+    # Unnecessary characters at the end of the line
     _RE_TRASH_END = r"([-,_.\+;]+$)"
 
     _RE_SEPARATORS = r" {2,}|\n|,|;"
 
-    # Сокращённые название кампусов.
+    # Campuses short names
     CAMPUSES_SHORT_NAMES = {
         "МП-1": Campus.MP_1,
         "В-78": Campus.V_78,
@@ -42,7 +42,7 @@ class ExcelFormatter(Formatter):
         "СДО": Campus.ONLINE,
     }
 
-    # Сокращённые названия типов аудиторий.
+    # Room type short names
     ROOM_TYPE_SHORT_NAMES = {
         "ауд": RoomType.AUDITORY,
         "лаб": RoomType.LABORATORY,
@@ -51,37 +51,37 @@ class ExcelFormatter(Formatter):
     }
 
     def __format_subgroups_and_type(self, lesson: str) -> list:
-        """Метод для форматирования сложных исключительных случаев в ячейке таблицы.
+        """Format rare cases when subgroup and lesson type are specified in a strange way.
 
         Returns:
-            list: список разделённых и отформатированных предметов
+            list of separated and formatted lesson names.
         """
 
         result = []
 
         # 2,4,6,8,10 (лк),12,14н (пр) Инструментарий информационно-аналитической деятельности
-        # группа 1 - номера недель, группа 2 - тип предмета
+        # group 1 - week numbers, group 2 - lesson type
         regexp_1 = r"(?:((?:\d+[-, \.]*)+(?:н|нед)?[. ]*)(?:[( ]*(лк|пр|лек|лаб)[) ]+))"
 
         # 1гр.= 2н.; 2гр.=4н. Криптографические методы защиты информации;
-        # группа 1 - номер группы, группа 2 - номера недель
+        # group 1 - subgroup num, group 2 - week numbers
         regexp_2 = r"(?:(\d+[-, \.]*)+(?:группа|груп|гр|подгруппа|подгр)[. -]*=\s*((?:\d+[-, \.]*)+(?:нед|н)?[;. \b]+))"
 
         # 6,12н-1гр 4,10н-2 гр Материалы и технологии трехмерной печати в машиностр
-        # группа 1 - номера недель, группа 2 - номер группы
+        # group 1 - week numbers, group 2 - subgroup num
         regexp_3 = r"(?:((?:\d+[-, \.]*)+(?:нед|н)[. ]*\-)(?:(\d+[-, =\.]*)+(?:группа|груп|гр|подгруппа|подгр)[. \b]*))"
 
         # (3,7,11,15 н. - лк; 5,9,13,17 н. - пр) Современные проблемы и методы прикладной информатики и развития
         # информационного общества
-        # группа 1 - номера недель, группа 2 - тип предмета
+        # group 1 - week numbers, group 2 - lesson type
         regexp_4 = (
             rf"({self._RE_NUMBERS}(?:н|нед)?[. ]*)(?:[- ]*(лк|пр|лек|лаб)(\b|[; ]+))"
         )
 
         expressions = [regexp_1, regexp_2, regexp_3, regexp_4]
 
-        # Проверяем, какие из регулярных выражений выше подходит в нашем случае, затем разделяем предмет согласно
-        # подгруппам, типам пары, неделям, удаляем мусор и возвращаем готовый список.
+        # Check which regexp is suitable for the lesson name. Divide lesson name according to subgroups,
+        # types of pairs, weeks, remove garbage and return the finished list.
         for regexp in expressions:
             found = re.finditer(regexp, lesson)
             found_items = [x for x in found]
@@ -89,7 +89,7 @@ class ExcelFormatter(Formatter):
                 for week_types in found_items:
                     lesson = lesson.replace(week_types.group(), "")
 
-                # удаление ненужных символов
+                # Remove unnecessary characters from the beginning and end of the lesson name.
                 remove_trash = r"(\A\W+\s*)|([-,_\+;]+$)"
                 lesson = re.sub(remove_trash, "", lesson)
                 lesson = lesson.strip()
@@ -135,20 +135,18 @@ class ExcelFormatter(Formatter):
         return result
 
     def __split_lessons(self, lessons: str) -> list:
-        """Разбивает строку с предметами на список названий предметов."""
+        """Split lessons by different separators."""
         result = []
 
-        # несколько предметов в одной ячейке и разделены
-        # с помощью переноса строки.
+        # Several lessons are separated by line breaks
         if "\n" in lessons:
             result = lessons.split("\n")
-        # несколько предметов разделены большим количество пробелов.
+
+        # Several lessons are separated by large spaces
         elif len(re.split(r" {3,}", lessons)) > 1:
             result = re.split(r" {3,}", lessons)
 
-        # используем __format_subgroups_and_type, чтобы разделить
-        # предметы по типу, если он указан, или по подгруппам, если они
-        # указаны
+        # Uses the default separator
         if len(result) > 0:
             for lesson in sorted(result):
                 formatted_lessons = self.__format_subgroups_and_type(lesson)
@@ -161,22 +159,14 @@ class ExcelFormatter(Formatter):
             if len(formatted_lessons) > 0:
                 result += formatted_lessons
 
-        # если len(result) == 0, то предыдущие методы форматирования не сработали,
-        # а это скорее всего значит, что у нас один предмет, либо несколько
-        # предметов записаны в одну строку
+        # If previous steps did not work, so we have only one lesson or several lessons in one line
         if len(result) == 0:
-            # пробуем разделить по ';'
+            # Try to split by semicolon
             if ";" in lessons:
                 result += lessons.split(";")
             else:
-                # Обрабатываем случай, когда несколько предметов записаны
-                # в одной строке, без разделителей (через пробел), либо это просто один предмет.
-                # Пример нескольких предметов в одной строке:
-                #
-                # 1,3,9,13 Конфиденциальное делопроизводство 5,7,11,15 н. кр 5 н. Деньги, кредит,банки
-                #
-                # Регулярка для раделения дисциплин, написанных в одну строку. Захватывает номера недели, с помощью
-                # позиций которых можно разделить предметы
+                # Handle case when lesson is written in one line without any separators. For example:
+                # "1,3,9,13 Конфиденциальное делопроизводство 5,7,11,15 н. кр 5 н. Деньги, кредит,банки"
                 re_one_line_lessons = r"(?:\d+[-,\s.]*)+(?:(?:нед|н)|\b)[\. ]*(?:\(?(?:кроме|кр)? *(?:\d+[-,\s.]*)+(?:(?:нед|н)|\b)[\. ])(?![.\s,\-\d]*(?:подгруппа|подгруп|подгр|п\/г|группа|гр))"
                 found = [x for x in re.finditer(re_one_line_lessons, lessons)]
                 length = len(found)
@@ -192,13 +182,19 @@ class ExcelFormatter(Formatter):
                                 lessons[current_found_pos[0] : next_found_pos[0]]
                             )
                 else:
-                    # одиночный предмет
+                    # One lesson in one line
                     result.append(lessons)
 
         return [lesson for lesson in result if lesson.strip() != ""]
 
     def __format_subgroups(self, lessons: list[str]) -> list[tuple[str, int | None]]:
-        """Если подгруппа есть в строке, то возвращает подстроку без подгруппы и номер подгруппы."""
+        """
+        If subgroup is specified in lessons, returns list of tuples with lesson name (without subgroup) and subgroup
+        number. Else returns list of tuples with lesson name and None.
+
+        Example:
+            "Физика (1 п/г)" -> [("Физика", 1)]
+        """
         re_subgroups = self._RE_NUMBERS + self._RE_SUBGROUPS
         new_lessons = []
         for i in range(len(lessons)):
@@ -209,9 +205,9 @@ class ExcelFormatter(Formatter):
                 groups = self.__parse_numbers(numbers_only)
                 if len(groups) == 1:
                     lesson = lesson.replace(found.group(0), "")
-                    # На случай, если подгруппы указаны в скобках
+                    # If subgroups are specified in brackets, remove them
                     lesson = re.sub(r"\(\W*\s*\)", "", lesson)
-                    # удалить запятые в начале и конце строки
+                    # Remove commas
                     lesson = re.sub(r"^\s*,\s*|\s*,\s*$", "", lesson)
                     new_lessons.append((lesson, groups[0]))
                 else:
@@ -222,8 +218,8 @@ class ExcelFormatter(Formatter):
 
     def __parse_numbers(self, numbers_substr) -> list[int]:
         def parse_interval_numbers(substring: str):
-            """Получение списка чисел из интервальной строки.
-            Пример: 1-3 -> [1, 2, 3]
+            """
+            Given a string like "1-5", returns a list of numbers from 1 to 5.
             """
 
             weeks_range = substring.split("-")
@@ -235,16 +231,16 @@ class ExcelFormatter(Formatter):
             ]
 
         def parse_listed_numbers(substring: str):
-            """Получение списка недель из строки с перечислением недель через
-            запятую.
-            Пример: 1,3,5 -> [1, 3, 5]
+            """
+            Get list of numbers from string with numbers separated by comma.
+            Example: "1, 2, 3" -> [1, 2, 3]
             """
             substring = re.sub(r"^([\W\s])+|([\W\s])+$", "", substring)
             weeks_list = substring.split(",")
             return [int(week.strip()) for week in weeks_list]
 
         numbers = []
-        # интервальный способ задания + перечисление
+        # Weeks are listed in interval format and separated by comma
         if "-" in numbers_substr and "," in numbers_substr:
             re_interval_numbers = r"(\d+ *- *\d+)"
             interval_weeks_substring = re.findall(re_interval_numbers, numbers_substr)[
@@ -253,29 +249,29 @@ class ExcelFormatter(Formatter):
 
             numbers += parse_interval_numbers(interval_weeks_substring)
             weeks_substring = re.sub(re_interval_numbers, "", numbers_substr)
-            # для удаления ненужных символов в начале и конце строки
+            # Remove unnecessary symbols
             weeks_substring = re.sub(r"^([\W\s])+|([\W\s])+$", "", weeks_substring)
             numbers += parse_listed_numbers(weeks_substring)
             numbers.sort()
 
-        # если это интервальный способ задания недель (прим.: 1-6 н.),
-        # то создаём интервал из этих недель и не забываем проверить чётность
+        # Weeks are listed in interval format
         elif "-" in numbers_substr:
             numbers += parse_interval_numbers(numbers_substr)
 
-        # список недель через запятую
+        # Weeks are listed in comma-separated format
         elif "," in numbers_substr:
             numbers += parse_listed_numbers(numbers_substr)
 
-        # если задана одиночная неделя
+        # Only one week
         else:
             clear_week = numbers_substr.strip()
             if len(clear_week) > 0:
                 numbers.append(int(clear_week))
+
         return numbers
 
     def __fix_typos(self, names: str) -> str:
-        """Исправление ошибок и опечаток в документе"""
+        """Fix typos in lesson names."""
         names = re.sub(r"деятельность\s*деятельность", "деятельность", names)
         names = re.sub(
             r"^\s*Военная\s*$", "Военная подготовка", names, flags=re.MULTILINE
@@ -292,14 +288,14 @@ class ExcelFormatter(Formatter):
     def __parse_weeks(
         self, weeks_substring: str, is_even: bool | None = None
     ) -> list[int]:
-        """Получение недель из строки с учётом чётности."""
+        """Get list of weeks from substring with weeks numbers considering parity."""
         weeks = self.__parse_numbers(weeks_substring)
         if is_even is not None:
             weeks = [week for week in weeks if week % 2 != is_even]
         return weeks
 
     def __get_only_lesson_name(self, lesson):
-        """Возвращает только название предмета, удаляя лишнюю информацию (напр., номера недель)"""
+        """Remove all unnecessary information from lesson name."""
 
         lesson = re.sub(self._RE_WEEKS, "", lesson)
         lesson = re.sub(self._RE_EXCLUDE_WEEKS, "", lesson)
@@ -318,12 +314,15 @@ class ExcelFormatter(Formatter):
             "B": "В",
         }
 
-        # Заменяем буквы на кириллицу
+        # replace english letters to russian
         rooms_cell_value = re.sub(
             r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms_cell_value
         )
 
-        # Первая группа - тип аудитории, вторая - номер аудитории, третья - сокращенное название кампуса
+        # Regex explanation:
+        # 1. ([а-яА-Я]+)\. - room type (e.g. "лаб.")
+        # 2. ([а-яА-Я0-9-]+) - room name (e.g. "А-101")
+        # 3. \(([а-яА-Я0-9-]+)\) - campus name (e.g. "(В-78)")
         re_rooms = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
         rooms_list = re.findall(re_rooms, rooms_cell_value)
         for room in rooms_list:
@@ -383,39 +382,38 @@ class ExcelFormatter(Formatter):
                 + teachers_names[typo.span(1)[1] :]
             )
 
-        # разделяем имена по разделителям
         names = re.split(self._RE_SEPARATORS, teachers_names)
 
         if len(names) > 1:
             result = [name.strip() for name in names if name.strip() != ""]
         else:
-            # Имена с инициалами могут быть написаны в одной строке через пробелы.
-            # Пример: Иванов И.И. Иванова И.И.
+            # Names with initials (e.g. И.И. Иванов) may be separated by spaces
             re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
 
-            # поиск имён без учета регистра
+            # Search fon names in a string without case sensitivity
             found = re.findall(re_teacher_name, teachers_names, flags=re.I)
             result = [x.strip() for x in found]
 
         return result
 
-    def __get_lesson_by_name(self, name: str):
-        """Получить тип занятия по строковому представлению."""
-        if name == LessonType.PRACTICE.value or name == "п":
+    def __get_lesson_type(self, type_name: str):
+        """Get lesson type by name"""
+
+        if type_name == LessonType.PRACTICE.value or type_name == "п":
             return LessonType.PRACTICE
         elif (
-            name == LessonType.LECTURE.value
-            or name == "лк"
-            or name == "лек"
-            or name == "л"
+            type_name == LessonType.LECTURE.value
+            or type_name == "лк"
+            or type_name == "лек"
+            or type_name == "л"
         ):
             return LessonType.LECTURE
-        elif name == LessonType.INDIVIDUAL_WORK.value or name == "ср":
+        elif type_name == LessonType.INDIVIDUAL_WORK.value or type_name == "ср":
             return LessonType.INDIVIDUAL_WORK
-        elif name == LessonType.LABORATORY_WORK.value or name == "лб":
+        elif type_name == LessonType.LABORATORY_WORK.value or type_name == "лб":
             return LessonType.LABORATORY_WORK
         else:
-            raise ValueError(f"Unknown lesson type: {name}")
+            raise ValueError(f"Unknown lesson type: {type_name}")
 
     def get_weeks(self, lesson: str, is_even=None, max_weeks=None) -> list[list[int]]:
         result = []
@@ -434,32 +432,30 @@ class ExcelFormatter(Formatter):
             exclude_weeks = r"(\b(кр|кроме)(\.|\b)\s*)" + include_weeks
 
             exclude_weeks_substr = re.search(exclude_weeks, lesson)
-            # 4-я группа в данном контексте - это только номера недель.
-            # см. https://regex101.com/
+            # 4 group is a week number
             exclude_weeks_substr = (
                 "" if exclude_weeks_substr is None else exclude_weeks_substr.group(4)
             )
 
-            # Необходимо исключить недели исключения из строки, чтобы недели
-            # включения не пересекались с ними при вызове метода поиска
+            # It is necessary to exclude the weeks on which the subject is not held
             lesson = re.sub(exclude_weeks, "", lesson)
             include_weeks_substr = re.search(include_weeks, lesson)
             include_weeks_substr = (
                 "" if include_weeks_substr is None else include_weeks_substr.group(1)
             )
 
-            # удаляем лишние пробелы слева и справа
+            # Remove unnecessary symbols
             include_weeks_substr = include_weeks_substr.strip()
             exclude_weeks_substr = exclude_weeks_substr.strip()
 
-            # получаем список int чисел неделю включения и исключения
+            # Get weeks from the string
             nums_include_weeks = self.__parse_weeks(include_weeks_substr, is_even)
             nums_exclude_weeks = self.__parse_weeks(exclude_weeks_substr, is_even)
 
             total_weeks = []
 
-            # если не указаны недели включения, но указаны недели исключения, то это значит, что предмет проходит на
-            # всех неделях, кроме недель исключений
+            # if inclusion weeks are not specified, but exclusion weeks are specified, then this means that the subject
+            # takes place on all weeks except exception weeks
             if len(nums_include_weeks) == 0 and len(nums_exclude_weeks) > 0:
                 for i in range(1, max_weeks + 1):
                     if i not in nums_exclude_weeks:
@@ -469,11 +465,10 @@ class ExcelFormatter(Formatter):
                         else:
                             total_weeks.append(i)
             elif len(nums_include_weeks) > 0:
-                # Проверяем, недели предмета с помощью недель исключения
                 for week in nums_include_weeks:
                     if week not in nums_exclude_weeks:
                         total_weeks.append(week)
-            # Если список недель вообще не задан, т.е. предмет проходит всегда
+            # if no weeks are specified, then the subject takes place on all weeks
             elif len(nums_include_weeks) == 0 and len(nums_exclude_weeks) == 0:
                 if max_weeks is not None:
                     for i in range(1, max_weeks + 1):
@@ -503,7 +498,7 @@ class ExcelFormatter(Formatter):
             types = re.findall(self._RE_LESSON_TYPES, lessons[i][0])
 
             if len(types) > 0:
-                lesson_type = self.__get_lesson_by_name(types[0].lower().strip())
+                lesson_type = self.__get_lesson_type(types[0].lower().strip())
                 result.append(
                     (
                         self.__get_only_lesson_name(lessons[i][0]),
@@ -521,6 +516,4 @@ class ExcelFormatter(Formatter):
     def get_types(self, cell_value: str) -> list[LessonType]:
         types = re.split(self._RE_SEPARATORS, cell_value)
 
-        return [
-            self.__get_lesson_by_name(el.strip().lower()) for el in types if el != ""
-        ]
+        return [self.__get_lesson_type(el.strip().lower()) for el in types if el != ""]

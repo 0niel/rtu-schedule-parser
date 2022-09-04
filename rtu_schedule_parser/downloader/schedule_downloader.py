@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class ScheduleDownloader:
-    # Ссылка на страницу с расписанием.
+    # Link to the schedule page.
     SCHEDULE_URL = "https://www.mirea.ru/schedule/"
 
-    # Папки, в которых будут храниться документы с расписанием для указанных типов.
+    # Folder names for each schedule type.
     SCHEDULE_TYPE_FOLDERS = {
         ScheduleType.SEMESTER: "semester",
         ScheduleType.TEST_SESSION: "test_session",
@@ -32,14 +32,16 @@ class ScheduleDownloader:
         "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
     )
 
-    # Заголовки, под которыми хранятся соответствующие типы документов на странице с расписанием. Документов и этих
-    # заголовков может не быть, например, если ещё нет расписания для сессии.
+    # Schedule type headers are located in the <h3> tag. These are the headers under which the corresponding types of
+    # documents are stored on the schedule page. Documents and these headers may not exist, for example, if there is
+    # no schedule for the session yet.
     _SCHEDULE_TYPE_HEADERS = {
         ScheduleType.SEMESTER: "Расписание занятий",
         ScheduleType.TEST_SESSION: "Расписание зачетной сессии",
         ScheduleType.EXAM_SESSION: "Расписание экзаменационной сессии",
     }
 
+    # Allowed file extensions to download.
     _ALLOWED_EXTENSIONS = [".pdf", ".xls", ".xlsx"]
 
     def __init__(
@@ -51,14 +53,15 @@ class ScheduleDownloader:
 
     def __download_schedule(self, url: str, path: str) -> tuple[str, bool]:
         """
-        Скачивание документа. Если файл уже существует, то он не будет перезаписан.
+        Download schedule from the specified url. If the file already exists, it will be not overwritten.
 
         Args:
-            url: Ссылка на документ
-            path: Путь, по которому будет сохранён документ
+            url: Url to download the file from.
+            path: Path to the file to download.
 
         Returns:
-            Путь к сохранённому документу и флаг, был ли документ перезаписан.
+            Tuple with path to downloaded file and flag, that indicates whether file was overwritten or first
+            time downloaded.
         """
 
         if os.path.isfile(path):
@@ -98,13 +101,13 @@ class ScheduleDownloader:
         self, documents: list[ScheduleDocument]
     ) -> list[tuple[ScheduleDocument, str, bool]]:
         """
-        Скачать множество документов.
+        Download files from the list of documents.
 
         Args:
-            documents: Список документов, которые нужно скачать.
+            documents: List of documents to download.
 
-        Returns: Список кортежей, в которых первый элемент - документ, второй - путь к скачанному файлу, третий - флаг,
-        был ли файл перезаписан.
+        Returns: List of tuples with downloaded document, path to the downloaded file and flag, whether the file was
+            overwritten/first downloaded or not.
         """
         progress_all = len(documents)
         downloaded_files = 0
@@ -198,13 +201,14 @@ class ScheduleDownloader:
 
     def download(self, schedule_document: ScheduleDocument) -> tuple[str, bool]:
         """
-        Скачать документ.
+        Download a schedule document.
 
         Args:
-            schedule_document: Документ расписания.
+            schedule_document: Schedule document to download.
 
-        Returns: Кортеж, в котором первый элемент - путь к скачанному файлу, третий - флаг,
-        был ли файл перезаписан.
+        Returns:
+            Tuple with path to downloaded file and flag, that indicates whether file was overwritten or first
+            time downloaded.
         """
         try:
             file_name = os.path.split(schedule_document.url)[1]
@@ -227,13 +231,14 @@ class ScheduleDownloader:
         self, schedule_documents: list[ScheduleDocument]
     ) -> list[tuple[ScheduleDocument, str, bool]]:
         """
-        Скачать множество документов.
+        Download many documents.
 
         Args:
-            schedule_documents: Список документов расписания.
+            schedule_documents: List of documents.
 
-        Returns: Список кортежей, в котором первый элемент - документ, второй - путь к скачанному файлу, третий - флаг,
-        был ли файл перезаписан.
+        Returns:
+            List of tuples, where first element is document, second is path to file, third is flag,
+            was file overwritten or first time downloaded.
         """
         return self.__download_files(schedule_documents)
 
@@ -244,15 +249,16 @@ class ScheduleDownloader:
         specific_degrees: set[Degree] = None,
     ) -> list[ScheduleDocument]:
         """
-        Получение информации о документах с расписанием с официального сайта.
+        Get all documents from site. If specific_schedule_types, specific_institutes or specific_degrees is not None,
+        then return only documents with specific types, institutes or degrees.
 
         Args:
-            specific_schedule_types: Если указано, то будут возвращены только документы с указанными типами.
-            specific_institutes: Если указано, то будут возвращены только документы с расписанием указанных институтов.
-            specific_degrees: Если указано, то будут возвращены только документы с расписанием указанных степеней.
+            specific_schedule_types: Specific schedule types. If None, then return all documents. Default is None.
+            specific_institutes: Specific institutes. If None, then return all documents. Default is None.
+            specific_degrees: Specific degrees. If None, then return all documents. Default is None.
 
         Returns:
-            Список документов с расписанием.
+            List of documents.
         """
 
         if specific_schedule_types is None:
@@ -264,14 +270,15 @@ class ScheduleDownloader:
 
         html = requests.get(self.SCHEDULE_URL).text
         bs = BeautifulSoup(html, "html.parser")
-        # Вкладки расписания с кнопками для ступеней образования: бакалавриат/специалитет, магистратура, аспирантура,
-        # колледж. Наличие класса `uk-active` у элемента списка означает, данная вкладка выбрана.
+
+        # Schedule tabs with education levels: bachelor, master, etc. The presence of the `uk-active` class in the
+        # list item means that this tab is selected.
         schedule_tabs = bs.find("div", {"id": "tabs"})  # type: bs.Tag
         tabs_content = schedule_tabs.find("ul", {"id": "tab-content"})
 
-        # Вкладки:
-        # БАКАЛАВРИАТ/СПЕЦИАЛИТЕТ, МАГИСТРАТУРА, АСПИРАНТУРА, КОЛЛЕДЖ, ЭКСТЕРНЫ
-        tabs_content = list(tabs_content.find_all("li"))[:4]  # первые 4 вкладки
+        # Tabs:
+        # "БАКАЛАВРИАТ/СПЕЦИАЛИТЕТ", "МАГИСТРАТУРА", "АСПИРАНТУРА", "КОЛЛЕДЖ", "ЭКСТЕРНЫ"
+        tabs_content = list(tabs_content.find_all("li"))[:4]  # first 4 tabs
 
         institute_schedule_cards = dict()  # type: dict[Degree, dict[Institute, bs.Tag]]
 
