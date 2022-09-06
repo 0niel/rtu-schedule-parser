@@ -45,3 +45,14 @@ df = group_schedule.get_dataframe()
 df.to_csv("schedule.csv")
 
 ```
+
+# Installation
+### From the source code
+```bash
+$ git clone https://github.com/mirea-ninja/rtu-curriculum-parser
+```
+and then install using pip:
+```console
+$ cd rtu-curriculum-parser
+$ python -m pip install .
+```
