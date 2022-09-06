@@ -30,6 +30,8 @@ for doc in downloaded:
         doc[1], doc[0].period, doc[0].institute, doc[0].degree
     )
     
+    # The `force` argument is used to ignore exceptions during document parsing. 
+    # This lets you to parse all possible groups.
     if schedules is None:
         schedules = parser.parse(force=True)
     else:
