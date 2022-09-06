@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import re
 
 from .constants import Campus, LessonType, RoomType
 from .formatter import Formatter
 from .schedule import Room
+
+logger = logging.getLogger(__name__)
 
 
 class ExcelFormatter(Formatter):
@@ -30,7 +33,7 @@ class ExcelFormatter(Formatter):
     # Unnecessary characters at the end of the line
     _RE_TRASH_END = r"([-,_.\+;]+$)"
 
-    _RE_SEPARATORS = r" {2,}|\n|,|;"
+    _RE_SEPARATORS = r" {2,}|\n|,|;|\+|\/"
 
     # Campuses short names
     CAMPUSES_SHORT_NAMES = {
@@ -279,9 +282,9 @@ class ExcelFormatter(Formatter):
         names = re.sub(
             r"^\s*подготовка\s*$", "Военная подготовка", names, flags=re.MULTILINE
         )
-        names = re.sub(r"^((\s*\d\s*п/г,*){2})$", "", names, flags=re.MULTILINE)
+        names = re.sub(r"^((\s*\d\s*п[/\\]?г,*){2})$", "", names, flags=re.MULTILINE)
         # replace \n to space
-        names = re.sub(r"(\n)(\d\s*п/г)", r" \g<2>", names, flags=re.MULTILINE)
+        names = re.sub(r"(\n)(\d\s*п[/\\]?г)", r" \g<2>", names, flags=re.MULTILINE)
 
         return names
 
@@ -312,36 +315,41 @@ class ExcelFormatter(Formatter):
         en_to_ru_letters = {
             "A": "А",
             "B": "В",
+            "C": "С",
         }
 
         # replace english letters to russian
-        rooms_cell_value = re.sub(
-            r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms_cell_value
-        )
+        try:
+            rooms_cell_value = re.sub(
+                r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms_cell_value
+            )
+        except KeyError:
+            raise ValueError("Unknown letter in rooms cell")
 
         # Regex explanation:
         # 1. ([а-яА-Я]+)\. - room type (e.g. "лаб.")
         # 2. ([а-яА-Я0-9-]+) - room name (e.g. "А-101")
         # 3. \(([а-яА-Я0-9-]+)\) - campus name (e.g. "(В-78)")
-        re_rooms = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
-        rooms_list = re.findall(re_rooms, rooms_cell_value)
-        for room in rooms_list:
+        re_rooms_with_type = r"([а-яА-Я]+)\. ([а-яА-Я0-9-]+) \(([а-яА-Я0-9-]+)\)"
+        rooms_with_type = re.findall(re_rooms_with_type, rooms_cell_value)
+
+        def try_get_room(room) -> Room:
             try:
-                result.append(
-                    Room(
-                        room[1],
-                        self.CAMPUSES_SHORT_NAMES[room[2]],
-                        self.ROOM_TYPE_SHORT_NAMES[room[0]],
-                    )
+                return Room(
+                    room[1],
+                    self.CAMPUSES_SHORT_NAMES[room[2]],
+                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
                 )
+
             except KeyError:
-                result.append(
-                    Room(
-                        room[1],
-                        None,
-                        self.ROOM_TYPE_SHORT_NAMES[room[0]],
-                    )
+                return Room(
+                    room[1],
+                    None,
+                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
                 )
+
+        for room in rooms_with_type:
+            result.append(try_get_room(room))
 
         if result:
             return result
@@ -361,9 +369,13 @@ class ExcelFormatter(Formatter):
                     flags=re.A,
                 )
                 result.append(Room(rooms, self.CAMPUSES_SHORT_NAMES[short_name], None))
+
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
             result = [Room(room, None, None) for room in rooms if room]
+
+        for room in result:
+            room.name = re.sub(r"(\s*\(\))\s*", "", room.name)
 
         return result
 
@@ -399,7 +411,13 @@ class ExcelFormatter(Formatter):
     def __get_lesson_type(self, type_name: str):
         """Get lesson type by name"""
 
-        if type_name == LessonType.PRACTICE.value or type_name == "п":
+        if (
+            type_name == LessonType.PRACTICE.value
+            or type_name == "п"
+            or type_name == "пр"
+            or type_name == "кр"
+            or type_name == "крпа"
+        ):
             return LessonType.PRACTICE
         elif (
             type_name == LessonType.LECTURE.value
@@ -410,7 +428,12 @@ class ExcelFormatter(Formatter):
             return LessonType.LECTURE
         elif type_name == LessonType.INDIVIDUAL_WORK.value or type_name == "ср":
             return LessonType.INDIVIDUAL_WORK
-        elif type_name == LessonType.LABORATORY_WORK.value or type_name == "лб":
+        elif (
+            type_name == LessonType.LABORATORY_WORK.value
+            or type_name == "лб"
+            or type_name == "лаб"
+            or type_name == "лр"
+        ):
             return LessonType.LABORATORY_WORK
         else:
             raise ValueError(f"Unknown lesson type: {type_name}")

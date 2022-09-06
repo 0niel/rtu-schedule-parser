@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -59,7 +59,7 @@ class LessonEmpty:
     time_end: datetime.time
 
 
-@dataclass(frozen=True)
+@dataclass
 class Schedule:
     """
     Schedule data class. Contains information about the schedule of a group. The schedule is a list of lessons. Each
@@ -68,12 +68,25 @@ class Schedule:
 
     group: str
     lessons: list[Lesson | LessonEmpty]
-    course: int
     period: Period
     institute: Institute
     degree: Degree
 
-    def to_dataframe(self):
+    _dataframe: pd.DataFrame = field(init=False, repr=False, default=None)
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """
+        Get pandas dataframe. The dataframe contains the following columns: `group`, `lesson_num`,
+        `lesson`, `weeks`, `weekday`, `teachers`, `time_start`, `time_end`, `type`, `room`, `campus`, `room_type`,
+        `subgroup`. If the dataframe has already been generated, then it will be returned from the cache. Otherwise,
+        the dataframe will be generated and cached.
+        """
+        if self._dataframe is None:
+            self._dataframe = self._generate_dataframe()
+
+        return self._dataframe
+
+    def _generate_dataframe(self):
         """
         Convert schedule to pandas dataframe. The dataframe contains the following columns: `group`, `lesson_num`,
         `lesson`, `weeks`, `weekday`, `teachers`, `time_start`, `time_end`, `type`, `room`, `campus`, `room_type`,

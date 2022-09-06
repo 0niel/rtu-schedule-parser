@@ -13,14 +13,12 @@ class ScheduleParser(metaclass=ABCMeta):
         self,
         document_path: str,
         formatter: Formatter,
-        course: int,
         period: Period,
         institute: Institute,
         degree: Degree,
     ) -> None:
         self._document_path = document_path
         self._formatter = formatter
-        self._course = course
         self._period = period
         self._degree = degree
         self._institute = institute

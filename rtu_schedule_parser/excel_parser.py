@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import re
 from dataclasses import dataclass
 from enum import IntEnum
@@ -8,15 +9,18 @@ from typing import Any, Generator
 
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from xls2xlsx import XLS2XLSX
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
-from rtu_schedule_parser import ScheduleParser
 from rtu_schedule_parser.constants import Degree, Institute
-from rtu_schedule_parser.formatter import Formatter
+from rtu_schedule_parser.excel_formatter import ExcelFormatter
+from rtu_schedule_parser.parser import ScheduleParser
 from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Schedule
 from rtu_schedule_parser.schedule_data import ScheduleData
 
 __all__ = ["ExcelScheduleParser"]
+
+logger = logging.getLogger(__name__)
 
 
 class _ColumnDataType(IntEnum):
@@ -62,19 +66,23 @@ class ExcelScheduleParser(ScheduleParser):
     def __init__(
         self,
         document_path: str,
-        formatter: Formatter,
-        course: int,
         period: academic_calendar.Period,
         institute: Institute,
         degree: Degree,
     ) -> None:
-        super().__init__(document_path, formatter, course, period, institute, degree)
+        super().__init__(document_path, ExcelFormatter(), period, institute, degree)
 
         self.__workbook = None
         self.__worksheets = None
 
     def __open_worksheets(self):
-        self.__workbook = load_workbook(self._document_path)
+        """Opens the workbook and all worksheets."""
+
+        if self._document_path.endswith(".xls"):
+            x2x = XLS2XLSX(self._document_path)
+            self.__workbook = x2x.to_xlsx()
+        else:
+            self.__workbook = load_workbook(self._document_path, data_only=True)
         self.__worksheets = self.__workbook.worksheets
 
     def __get_group_columns(
@@ -85,8 +93,9 @@ class ExcelScheduleParser(ScheduleParser):
 
         for row in worksheet.iter_rows(group_row_index):
             for cell in row:
-                if self.RE_GROUP_NAME.match(str(cell.value)):
-                    group_columns.append((cell.value, cell.col_idx))
+                group_name = self.RE_GROUP_NAME.search(str(cell.value))
+                if group_name:
+                    group_columns.append((group_name.group(1), cell.col_idx))
 
         return group_columns
 
@@ -113,6 +122,8 @@ class ExcelScheduleParser(ScheduleParser):
             return elements[0]
         elif len(elements) == 0:
             return None
+        elif lesson_length == 1 and len(elements) == 2:
+            return elements[0]
         else:
             raise ValueError("Invalid lesson length")
 
@@ -130,8 +141,10 @@ class ExcelScheduleParser(ScheduleParser):
 
             subjects = row[group_column + _ColumnDataType.SUBJECT].value
             types = row[group_column + _ColumnDataType.TYPE].value
-            teachers = str(row[group_column + _ColumnDataType.TEACHER].value)
+            teachers = row[group_column + _ColumnDataType.TEACHER].value
+            teachers = str(teachers) if teachers else ""
             rooms = row[group_column + _ColumnDataType.ROOM].value
+            rooms = str(rooms) if rooms else ""
 
             if subjects is None or subjects == "":
                 yield LessonEmpty(
@@ -261,15 +274,21 @@ class ExcelScheduleParser(ScheduleParser):
             except ValueError:
                 pass
 
-    def parse(self) -> ScheduleData:
+    def parse(self, force: bool = False) -> ScheduleData:
+        """
+        Args:
+            force: If True, then the schedule will be parsed even if exceptions occur during parsing.
+        """
+
         self.__open_worksheets()
 
         schedule = []
 
         for worksheet in self.__worksheets:
             group_name_row = self.__find_group_row(worksheet)
+
             if group_name_row is None:
-                raise Exception("The row with the group type_name was not found")
+                continue
 
             group_columns = self.__get_group_columns(group_name_row, worksheet)
 
@@ -279,19 +298,28 @@ class ExcelScheduleParser(ScheduleParser):
             )
 
             for group_column in group_columns:
-                lessons = list(
-                    self.__parse_lessons(group_column[1], lesson_cells, worksheet)
-                )
-                group_name = group_column[0]
-                schedule.append(
-                    Schedule(
-                        group_name,
-                        lessons,
-                        self._course,
-                        self._period,
-                        self._institute,
-                        self._degree,
+                try:
+                    lessons = list(
+                        self.__parse_lessons(group_column[1], lesson_cells, worksheet)
                     )
-                )
+                    group_name = group_column[0]
+                    schedule.append(
+                        Schedule(
+                            group_name,
+                            lessons,
+                            self._period,
+                            self._institute,
+                            self._degree,
+                        )
+                    )
+
+                except ValueError:
+                    if force is False:
+                        raise
+                    else:
+                        logger.error(
+                            f"Error parsing schedule for group {group_column[0]}"
+                            f" in worksheet {worksheet.title}. Skipping."
+                        )
 
         return ScheduleData(schedule)

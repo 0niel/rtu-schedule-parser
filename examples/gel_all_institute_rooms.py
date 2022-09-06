@@ -1,16 +1,13 @@
 import os
 
 from rtu_schedule_parser import ExcelScheduleParser, ScheduleData
-from rtu_schedule_parser.constants import Degree, Institute
 from rtu_schedule_parser.downloader import ScheduleDownloader
 
 if __name__ == "__main__":
     # Initialize downloader with default directory to save files
     downloader = ScheduleDownloader()
     # Get documents for specified institute and degree
-    iit_docs = downloader.get_documents(
-        specific_degrees={Degree.BACHELOR}, specific_institutes={Institute.IIT}
-    )
+    iit_docs = downloader.get_documents()
 
     # Download only if they are not downloaded yet.
     downloaded = downloader.download_all(iit_docs)
@@ -20,11 +17,19 @@ if __name__ == "__main__":
     schedules = None  # type: ScheduleData | None
     for doc in downloaded:
         print(f"Processing document: {doc}")
-        if schedules is None:
-            schedules = ExcelScheduleParser(doc[1]).parse()
-        else:
-            schedules.extend(ExcelScheduleParser(doc[1]).parse().get_schedule())
-
+        try:
+            parser = ExcelScheduleParser(
+                "C:\\Users\\foran\\Desktop\\sources\\rtu-schedule-parser\\rtu_schedule_parser\\downloader\\documents\\semester\\3_kurs_IKB_pnd_vt_chet.xls",
+                doc[0].period,
+                doc[0].institute,
+                doc[0].degree,
+            )
+            if schedules is None:
+                schedules = parser.parse()
+            else:
+                schedules.extend(parser.parse().get_schedule())
+        except Exception as e:
+            print(f"Error while parsing {doc}: {e}")
     # Initialize pandas dataframe
     df = schedules.get_dataframe()
     # get only room, room_type and campus from dataframe

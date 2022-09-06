@@ -12,14 +12,14 @@ class ScheduleData:
         self._schedule = schedule
         self._df = self._generate_dataframe()
 
-        institutes = set([schedule.institute for schedule in self._schedule])
-        assert len(institutes) == 1, "Institutes must be the same"
+        # institutes = set([schedule.institute for schedule in self._schedule])
+        # assert len(institutes) == 1, "Institutes must be the same"
 
     def _generate_dataframe(self):
         # Generate pandas dataframe from schedule
         df = None
         for schedule in self._schedule:
-            dataframe = schedule.to_dataframe()
+            dataframe = schedule.get_dataframe()
             # if df has no columns, add columns from dataframe
             if df is None:
                 df = dataframe
