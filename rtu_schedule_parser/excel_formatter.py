@@ -273,7 +273,7 @@ class ExcelFormatter(Formatter):
 
         return numbers
 
-    def __fix_typos(self, names: str) -> str:
+    def __fix_lesson_typos(self, names: str) -> str:
         """Fix typos in lesson names."""
         names = re.sub(r"деятельность\s*деятельность", "деятельность", names)
         names = re.sub(
@@ -287,6 +287,26 @@ class ExcelFormatter(Formatter):
         names = re.sub(r"(\n)(\d\s*п[/\\]?г)", r" \g<2>", names, flags=re.MULTILINE)
 
         return names
+
+    def __fix_room_typos(self, rooms: str) -> str:
+        """Fix typos in room names."""
+        rooms = rooms.replace("ауд спец.", "лаб.")
+
+        en_to_ru_letters = {
+            "A": "А",
+            "B": "В",
+            "C": "С",
+        }
+
+        # replace english letters to russian
+        try:
+            rooms = re.sub(
+                r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms
+            )
+        except KeyError:
+            raise ValueError("Unknown letter in rooms cell")
+
+        return rooms
 
     def __parse_weeks(
         self, weeks_substring: str, is_even: bool | None = None
@@ -312,19 +332,7 @@ class ExcelFormatter(Formatter):
     def get_rooms(self, rooms_cell_value: str) -> list[Room]:
         result = []
 
-        en_to_ru_letters = {
-            "A": "А",
-            "B": "В",
-            "C": "С",
-        }
-
-        # replace english letters to russian
-        try:
-            rooms_cell_value = re.sub(
-                r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms_cell_value
-            )
-        except KeyError:
-            raise ValueError("Unknown letter in rooms cell")
+        rooms_cell_value = self.__fix_room_typos(rooms_cell_value)
 
         # Regex explanation:
         # 1. ([а-яА-Я]+)\. - room type (e.g. "лаб.")
@@ -441,7 +449,7 @@ class ExcelFormatter(Formatter):
     def get_weeks(self, lesson: str, is_even=None, max_weeks=None) -> list[list[int]]:
         result = []
 
-        lesson = self.__fix_typos(lesson)
+        lesson = self.__fix_lesson_typos(lesson)
 
         lessons = self.__split_lessons(lesson)
 
@@ -512,7 +520,7 @@ class ExcelFormatter(Formatter):
     def get_lessons(
         self, lessons_cell_value: str
     ) -> list[tuple[str, LessonType | None, int | None]]:
-        lesson = self.__fix_typos(lessons_cell_value)
+        lesson = self.__fix_lesson_typos(lessons_cell_value)
 
         lessons = self.__format_subgroups(self.__split_lessons(lesson))
         result = []
@@ -537,6 +545,9 @@ class ExcelFormatter(Formatter):
         return [lesson for lesson in result if lesson[0].strip() != ""]
 
     def get_types(self, cell_value: str) -> list[LessonType]:
+        # Because `/` can be used to separate multiple types, need to make sure that the type for individual work will not be split
+        cell_value = cell_value.replace('с/р', 'ср')
+
         types = re.split(self._RE_SEPARATORS, cell_value)
 
         return [self.__get_lesson_type(el.strip().lower()) for el in types if el != ""]
