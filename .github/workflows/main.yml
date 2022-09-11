@@ -1,0 +1,42 @@
+name: Workflow
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+    
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Install and configure Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: Install Dependencies
+      run: poetry install --no-interaction
+    - name: Generate coverage report
+      run: |
+        source .venv/bin/activate
+        pytest --cov=./rtu_schedule_parser --cov-report=xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: coverage.xml
+        verbose: true
