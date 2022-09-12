@@ -55,7 +55,7 @@ if __name__ == "__main__":
             if type(lesson) is not LessonEmpty:
                 for week in lesson.weeks:
                     lesson_type = ''
-                    if lesson_type:
+                    if lesson.type:
                         lesson_type = f' ({lesson.type.value})'
                     subject = f"{lesson.num} | {lesson.name}{lesson_type}"
                     start_time = lesson.time_start.strftime("%I:%M %p")
