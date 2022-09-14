@@ -35,16 +35,6 @@ class ExcelFormatter(Formatter):
 
     _RE_SEPARATORS = r" {2,}|\n|,|;|\+|\/"
 
-    # Campuses short names
-    CAMPUSES_SHORT_NAMES = {
-        "МП-1": Campus.MP_1,
-        "В-78": Campus.V_78,
-        "В-86": Campus.V_86,
-        "С-20": Campus.S_20,
-        "СГ-22": Campus.SG_22,
-        "СДО": Campus.ONLINE,
-    }
-
     # Room type short names
     ROOM_TYPE_SHORT_NAMES = {
         "ауд": RoomType.AUDITORY,
@@ -345,7 +335,7 @@ class ExcelFormatter(Formatter):
             try:
                 return Room(
                     room[1],
-                    self.CAMPUSES_SHORT_NAMES[room[2]],
+                    Campus.get_by_short_name(room[2]),
                     self.ROOM_TYPE_SHORT_NAMES[room[0]],
                 )
 
@@ -362,7 +352,8 @@ class ExcelFormatter(Formatter):
         if result:
             return result
 
-        for short_name in self.CAMPUSES_SHORT_NAMES:
+        for campus in Campus:
+            short_name = campus.short_name
             res = re.findall(short_name, rooms_cell_value, flags=re.A)
             if res:
                 rooms = (
@@ -376,7 +367,7 @@ class ExcelFormatter(Formatter):
                     rooms,
                     flags=re.A,
                 )
-                result.append(Room(rooms, self.CAMPUSES_SHORT_NAMES[short_name], None))
+                result.append(Room(rooms, Campus.get_by_short_name(short_name), None))
 
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)

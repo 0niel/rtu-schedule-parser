@@ -38,9 +38,6 @@ if __name__ == "__main__":
         else:
             schedules.extend(parser.parse(force=True).get_schedule())
 
-    # Invert `ExcelFormatter.CAMPUSES_SHORT_NAMES`. It is needed to get campus short name by campus.
-    campuses = {v: k for k, v in ExcelFormatter.CAMPUSES_SHORT_NAMES.items()}
-
     for schedule in schedules.get_schedule():
         # Subject (Пример: Математический анализ),
         # Start Date (Пример: 05/30/2020)
@@ -68,7 +65,7 @@ if __name__ == "__main__":
                     location = lesson.room.name if lesson.room else ''
                     if lesson.room:
                         if lesson.room.campus:
-                            location = f"{location} ({campuses[lesson.room.campus]})"
+                            location = f"{location} ({lesson.room.campus.short_name})"
 
                     row = {
                         "Subject": subject,

@@ -111,9 +111,31 @@ class Campus(Enum):
 
     __slots__ = ()
 
-    MP_1 = "ул. Малая Пироговская, д.1"
-    V_78 = "Проспект Вернадского, д.78"
-    V_86 = "Проспект Вернадского, д.86"
-    S_20 = "ул. Стромынка, 20"
-    SG_22 = "5-я ул. Соколиной горы, д.22"
-    ONLINE = "СДО"
+    MP_1 = ("МП-1", "ул. Малая Пироговская, д.1")
+    V_78 = ("В-78", "Проспект Вернадского, д.78")
+    V_86 = ("В-86", "Проспект Вернадского, д.86")
+    S_20 = ("С-20", "ул. Стромынка, 20")
+    SG_22 = ("СГ-22", "5-я ул. Соколиной горы, д.22")
+    ONLINE = ("СДО", "СДО")
+
+    @staticmethod
+    def get_by_name(name):
+        for campus in Campus:
+            if campus.name == name:
+                return campus
+        raise ValueError(f"Unknown campus name: {name}")
+
+    @staticmethod
+    def get_by_short_name(short_name):
+        for campus in Campus:
+            if campus.short_name == short_name:
+                return campus
+        raise ValueError(f"Unknown campus short name: {short_name}")
+
+    @property
+    def short_name(self):
+        return self.value[0]
+
+    @property
+    def name(self):
+        return self.value[1]
