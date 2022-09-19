@@ -15,14 +15,14 @@ if __name__ == "__main__":
 
     # Create schedule with downloaded files
     schedules = None  # type: ScheduleData | None
-    for doc in downloaded:
+    for doc, doc_path, is_downloaded in downloaded:
         print(f"Processing document: {doc}")
         try:
             parser = ExcelScheduleParser(
-                "C:\\Users\\foran\\Desktop\\sources\\rtu-schedule-parser\\rtu_schedule_parser\\downloader\\documents\\semester\\3_kurs_IKB_pnd_vt_chet.xls",
-                doc[0].period,
-                doc[0].institute,
-                doc[0].degree,
+                doc_path,
+                doc.period,
+                doc.institute,
+                doc.degree,
             )
             if schedules is None:
                 schedules = parser.parse()

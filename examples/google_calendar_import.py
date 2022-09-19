@@ -3,8 +3,8 @@ import pandas as pd
 import datetime
 
 from rtu_schedule_parser import ExcelScheduleParser, ScheduleData, LessonEmpty
+from rtu_schedule_parser.constants import Institute, Degree
 from rtu_schedule_parser.downloader import ScheduleDownloader
-from rtu_schedule_parser.excel_formatter import ExcelFormatter
 
 
 def calculate_day_by_week(week: int, weekday: int) -> datetime.date:
@@ -18,7 +18,9 @@ if __name__ == "__main__":
     # Initialize downloader with default directory to save files
     downloader = ScheduleDownloader()
     # Get documents for specified institute and degree
-    all_docs = downloader.get_documents()
+    all_docs = downloader.get_documents(
+        specific_institutes={Institute.IIT}, specific_degrees={Degree.BACHELOR}
+    )
 
     # Download only if they are not downloaded yet.
     downloaded = downloader.download_all(all_docs)
@@ -27,57 +29,52 @@ if __name__ == "__main__":
 
     # Create schedule with downloaded files
     schedules = None  # type: ScheduleData | None
-    for doc in downloaded:
+    for doc, doc_path, is_downloaded in downloaded:
         print(f"Processing document: {doc}")
 
-        parser = ExcelScheduleParser(
-            doc[1], doc[0].period, doc[0].institute, doc[0].degree
-        )
+        parser = ExcelScheduleParser(doc_path, doc.period, doc.institute, doc.degree)
         if schedules is None:
             schedules = parser.parse(force=True)
         else:
             schedules.extend(parser.parse(force=True).get_schedule())
 
-    for schedule in schedules.get_schedule():
-        # Subject (Пример: Математический анализ),
-        # Start Date (Пример: 05/30/2020)
-        # Start Time (Пример: 10:00 AM)
-        # End Date (Пример: 05/30/2020)
-        # End Time (Пример: 1:00 PM)
-        # Description (Иванов И.И.)
-        # Location (Пример: "А-420 (В-78)")
-        google_calendar_df = pd.DataFrame()
+    schedule = schedules.get_group_schedule("ИКБО-01-20")
 
-        for lesson in schedule.lessons:
-            if type(lesson) is not LessonEmpty:
-                for week in lesson.weeks:
-                    lesson_type = ''
-                    if lesson.type:
-                        lesson_type = f' ({lesson.type.value})'
-                    subject = f"{lesson.num} | {lesson.name}{lesson_type}"
-                    start_time = lesson.time_start.strftime("%I:%M %p")
-                    end_time = lesson.time_end.strftime("%I:%M %p")
-                    start_date = calculate_day_by_week(week, lesson.weekday.value[0])
-                    if start_date.month < 9:
-                        continue
-                    end_date = start_date
-                    description = ', '.join(lesson.teachers)
-                    location = lesson.room.name if lesson.room else ''
-                    if lesson.room:
-                        if lesson.room.campus:
-                            location = f"{location} ({lesson.room.campus.short_name})"
+    # Subject (Example: "Математический анализ"), Start Date (Example: "05/30/2020"), Start Time (Example: "10:00
+    # AM"), End Date (Example: "05/30/2020"), End Time (Example: "1:00 PM"), Description (Example: "Иванов И.И."),
+    # Location (Example: "А-420 (В-78)")
+    google_calendar_df = pd.DataFrame()
 
-                    row = {
-                        "Subject": subject,
-                        "Start Date": start_date,
-                        "Start Time": start_time,
-                        "End Date": end_date,
-                        "End Time": end_time,
-                        "Description": description,
-                        "Location": location
-                    }
+    for lesson in schedule.lessons:
+        if type(lesson) is not LessonEmpty:
+            for week in lesson.weeks:
+                lesson_type = ""
+                if lesson.type:
+                    lesson_type = f" ({lesson.type.value})"
+                subject = f"{lesson.num} | {lesson.name}{lesson_type}"
+                start_time = lesson.time_start.strftime("%I:%M %p")
+                end_time = lesson.time_end.strftime("%I:%M %p")
+                start_date = calculate_day_by_week(week, lesson.weekday.value[0])
+                if start_date.month < 9:
+                    continue
+                end_date = start_date
+                description = ", ".join(lesson.teachers)
+                location = lesson.room.name if lesson.room else ""
+                if lesson.room:
+                    if lesson.room.campus:
+                        location = f"{location} ({lesson.room.campus.short_name})"
 
-                    google_calendar_df = google_calendar_df.append(row, ignore_index=True)
+                row = {
+                    "Subject": subject,
+                    "Start Date": start_date,
+                    "Start Time": start_time,
+                    "End Date": end_date,
+                    "End Time": end_time,
+                    "Description": description,
+                    "Location": location,
+                }
+
+                google_calendar_df = google_calendar_df.append(row, ignore_index=True)
 
         current_dir = os.path.dirname(os.path.realpath(__file__))
         # create output dir
