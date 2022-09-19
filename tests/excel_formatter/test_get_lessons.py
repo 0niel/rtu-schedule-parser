@@ -485,3 +485,9 @@ def test_get_lessons_49(excel_formatter):
     result = excel_formatter.get_lessons("4,8,12,16 н. Электротехника\n2 п/г")
     correct_result = [("Электротехника", None, 2)]
     assert result == correct_result
+
+
+def test_get_lessons_50(excel_formatter):
+    result = excel_formatter.get_lessons("Метрология и обеспечение единства измерений\n2 п/г")
+    correct_result = [("Метрология и обеспечение единства измерений", None, 2)]
+    assert result == correct_result

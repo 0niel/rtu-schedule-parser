@@ -117,6 +117,7 @@ class Campus(Enum):
     S_20 = ("С-20", "ул. Стромынка, 20")
     SG_22 = ("СГ-22", "5-я ул. Соколиной горы, д.22")
     ONLINE = ("СДО", "СДО")
+    BASE = ("База", "База")
 
     @staticmethod
     def get_by_name(name):
