@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
 
 from .constants import Campus, LessonType, RoomType
 from .formatter import Formatter
 from .schedule import Room
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -190,14 +192,13 @@ class ExcelFormatter(Formatter):
         """
         re_subgroups = self._RE_NUMBERS + self._RE_SUBGROUPS
         new_lessons = []
-        for i in range(len(lessons)):
-            lesson = lessons[i]
-            found = re.search(re_subgroups, lesson)
-            if found:
-                numbers_only = found.group(0).replace(found.group(1), "").strip()
+        for lesson_ in lessons:
+            lesson = lesson_
+            if found := re.search(re_subgroups, lesson):
+                numbers_only = found[0].replace(found[1], "").strip()
                 groups = self.__parse_numbers(numbers_only)
                 if len(groups) == 1:
-                    lesson = lesson.replace(found.group(0), "")
+                    lesson = lesson.replace(found[0], "")
                     # If subgroups are specified in brackets, remove them
                     lesson = re.sub(r"\(\W*\s*\)", "", lesson)
                     # Remove commas
@@ -216,12 +217,9 @@ class ExcelFormatter(Formatter):
             """
 
             weeks_range = substring.split("-")
-            return [
-                week
-                for week in range(
-                    int(weeks_range[0].strip()), int(weeks_range[1].strip()) + 1
-                )
-            ]
+            return list(
+                range(int(weeks_range[0].strip()), int(weeks_range[1].strip()) + 1)
+            )
 
         def parse_listed_numbers(substring: str):
             """
@@ -290,11 +288,9 @@ class ExcelFormatter(Formatter):
 
         # replace english letters to russian
         try:
-            rooms = re.sub(
-                r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms
-            )
-        except KeyError:
-            raise ValueError("Unknown letter in rooms cell")
+            rooms = re.sub(r"([A-Z])", lambda x: en_to_ru_letters[x.group(0)], rooms)
+        except KeyError as e:
+            raise ValueError("Unknown letter in rooms cell") from e
 
         return rooms
 
@@ -373,8 +369,10 @@ class ExcelFormatter(Formatter):
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
             result = [Room(room, None, None) for room in rooms if room]
 
-        for room in result:
-            room.name = re.sub(r"(\s*\(\))\s*", "", room.name)
+        for i in range(len(result)):
+            room = result[i]
+            new_name = re.sub(r"(\s*\(\))\s*", "", room.name)
+            result[i] = replace(room, name=new_name)
 
         return result
 
@@ -388,54 +386,33 @@ class ExcelFormatter(Formatter):
         typos = re.finditer(re_typos, teachers_names, flags=re.I)
         for typo in typos:
             teachers_names = (
-                teachers_names[: typo.span(1)[0]]
-                + "."
-                + teachers_names[typo.span(1)[1] :]
+                f"{teachers_names[:typo.span(1)[0]]}.{teachers_names[typo.span(1)[1]:]}"
             )
 
         names = re.split(self._RE_SEPARATORS, teachers_names)
 
         if len(names) > 1:
-            result = [name.strip() for name in names if name.strip() != ""]
-        else:
-            # Names with initials (e.g. И.И. Иванов) may be separated by spaces
-            re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
+            return [name.strip() for name in names if name.strip() != ""]
+        # Names with initials (e.g. И.И. Иванов) may be separated by spaces
+        re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
 
-            # Search fon names in a string without case sensitivity
-            found = re.findall(re_teacher_name, teachers_names, flags=re.I)
-            result = [x.strip() for x in found]
+        # Search fon names in a string without case sensitivity
+        found = re.findall(re_teacher_name, teachers_names, flags=re.I)
+        return [x.strip() for x in found]
 
-        return result
-
-    def __get_lesson_type(self, type_name: str):
+    def __get_lesson_type(self, type_name: str) -> LessonType | None:
         """Get lesson type by name"""
-
-        if (
-            type_name == LessonType.PRACTICE.value
-            or type_name == "п"
-            or type_name == "пр"
-            or type_name == "кр"
-            or type_name == "крпа"
-        ):
+        if type_name in [LessonType.PRACTICE.value, "п", "пр", "кр", "крпа"]:
             return LessonType.PRACTICE
-        elif (
-            type_name == LessonType.LECTURE.value
-            or type_name == "лк"
-            or type_name == "лек"
-            or type_name == "л"
-        ):
+        elif type_name in [LessonType.LECTURE.value, "лк", "лек", "л"]:
             return LessonType.LECTURE
-        elif type_name == LessonType.INDIVIDUAL_WORK.value or type_name == "ср":
+        elif type_name in [LessonType.INDIVIDUAL_WORK.value, "ср"]:
             return LessonType.INDIVIDUAL_WORK
-        elif (
-            type_name == LessonType.LABORATORY_WORK.value
-            or type_name == "лб"
-            or type_name == "лаб"
-            or type_name == "лр"
-        ):
+        elif type_name in [LessonType.LABORATORY_WORK.value, "лб", "лаб", "лр"]:
             return LessonType.LABORATORY_WORK
         else:
-            raise ValueError(f"Unknown lesson type: {type_name}")
+            logger.warning(f"Unknown lesson type: {type_name}")
+            return None
 
     def get_weeks(self, lesson: str, is_even=None, max_weeks=None) -> list[list[int]]:
         result = []
@@ -444,26 +421,26 @@ class ExcelFormatter(Formatter):
 
         lessons = self.__split_lessons(lesson)
 
+        include_weeks = (
+            r"(\b(\d+[-, ]*)+)((н|нед)?(?![.\s,\-\d]*(?:подгруппа|подгруп|подгр|п\/г|группа|гр))"
+            r"(\.|\b))"
+        )
         for lesson in lessons:
             lesson = lesson.lower()
 
-            include_weeks = (
-                r"(\b(\d+[-, ]*)+)((н|нед)?(?![.\s,\-\d]*(?:подгруппа|подгруп|подгр|п\/г|группа|гр))"
-                r"(\.|\b))"
-            )
             exclude_weeks = r"(\b(кр|кроме)(\.|\b)\s*)" + include_weeks
 
             exclude_weeks_substr = re.search(exclude_weeks, lesson)
             # 4 group is a week number
             exclude_weeks_substr = (
-                "" if exclude_weeks_substr is None else exclude_weeks_substr.group(4)
+                "" if exclude_weeks_substr is None else exclude_weeks_substr[4]
             )
 
             # It is necessary to exclude the weeks on which the subject is not held
             lesson = re.sub(exclude_weeks, "", lesson)
             include_weeks_substr = re.search(include_weeks, lesson)
             include_weeks_substr = (
-                "" if include_weeks_substr is None else include_weeks_substr.group(1)
+                "" if include_weeks_substr is None else include_weeks_substr[1]
             )
 
             # Remove unnecessary symbols
@@ -479,30 +456,35 @@ class ExcelFormatter(Formatter):
             # if inclusion weeks are not specified, but exclusion weeks are specified, then this means that the subject
             # takes place on all weeks except exception weeks
             if len(nums_include_weeks) == 0 and len(nums_exclude_weeks) > 0:
-                for i in range(1, max_weeks + 1):
-                    if i not in nums_exclude_weeks:
-                        if is_even is not None:
-                            if bool(i % 2) != is_even:
-                                total_weeks.append(i)
-                        else:
-                            total_weeks.append(i)
+                total_weeks.extend(
+                    i
+                    for i in range(1, max_weeks + 1)
+                    if i not in nums_exclude_weeks
+                    and (
+                        is_even is not None
+                        and bool(i % 2) != is_even
+                        or is_even is None
+                    )
+                )
+
             elif len(nums_include_weeks) > 0:
-                for week in nums_include_weeks:
-                    if week not in nums_exclude_weeks:
-                        total_weeks.append(week)
-            # if no weeks are specified, then the subject takes place on all weeks
+                total_weeks.extend(
+                    week
+                    for week in nums_include_weeks
+                    if week not in nums_exclude_weeks
+                )
+
             elif len(nums_include_weeks) == 0 and len(nums_exclude_weeks) == 0:
-                if max_weeks is not None:
-                    for i in range(1, max_weeks + 1):
-                        if is_even is not None:
-                            if bool(i % 2) != is_even:
-                                total_weeks.append(i)
-                        else:
-                            total_weeks.append(i)
-                else:
+                if max_weeks is None:
                     raise ValueError(
                         "No weeks specified for lesson. Please specify max_weeks parameter"
                     )
+
+                total_weeks.extend(
+                    i
+                    for i in range(1, max_weeks + 1)
+                    if is_even is not None and bool(i % 2) != is_even or is_even is None
+                )
 
             result.append(total_weeks)
 
@@ -536,8 +518,9 @@ class ExcelFormatter(Formatter):
         return [lesson for lesson in result if lesson[0].strip() != ""]
 
     def get_types(self, cell_value: str) -> list[LessonType]:
-        # Because `/` can be used to separate multiple types, need to make sure that the type for individual work will not be split
-        cell_value = cell_value.replace('с/р', 'ср')
+        # Because `/` can be used to separate multiple types, need to make sure that the type for individual work
+        # will not be split
+        cell_value = cell_value.replace("с/р", "ср")
 
         types = re.split(self._RE_SEPARATORS, cell_value)
 

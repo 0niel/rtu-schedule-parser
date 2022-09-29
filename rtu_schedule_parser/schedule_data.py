@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 
 from rtu_schedule_parser.schedule import LessonEmpty, Room, Schedule
@@ -8,23 +10,22 @@ class ScheduleData:
     Schedule data for one institute. Contains list of schedules for each group.
     """
 
-    def __init__(self, schedule: list[Schedule]):
+    def __init__(self, schedule: list[Schedule], generate_dataframe: bool = False):
         self._schedule = schedule
-        self._df = self._generate_dataframe()
+        self._df = None
 
-        # institutes = set([schedule.institute for schedule in self._schedule])
-        # assert len(institutes) == 1, "Institutes must be the same"
+        if generate_dataframe:
+            self._df = self.generate_dataframe()
 
-    def _generate_dataframe(self):
-        # Generate pandas dataframe from schedule
+    def generate_dataframe(self):
+        """
+        Generate pandas dataframe.
+        """
         df = None
         for schedule in self._schedule:
             dataframe = schedule.get_dataframe()
             # if df has no columns, add columns from dataframe
-            if df is None:
-                df = dataframe
-            else:
-                df = pd.concat([df, dataframe])
+            df = dataframe if df is None else pd.concat([df, dataframe])
 
         df.index = range(len(df))
 
@@ -35,14 +36,14 @@ class ScheduleData:
         Append schedule to schedule data.
         """
         self._schedule.append(schedule)
-        self._df = self._generate_dataframe()
+        self._df = self.generate_dataframe()
 
     def extend(self, schedule: list[Schedule]):
         """
         Extend schedule data with another schedule data.
         """
         self._schedule.extend(schedule)
-        self._df = self._generate_dataframe()
+        self._df = self.generate_dataframe()
 
     def get_schedule(self) -> list[Schedule]:
         """
@@ -50,9 +51,10 @@ class ScheduleData:
         """
         return self._schedule
 
-    def get_dataframe(self) -> pd.DataFrame:
+    def get_dataframe(self) -> pd.DataFrame | None:
         """
-        Get pandas dataframe.
+        Get pandas dataframe. If dataframe is not generated, return None. Use generate_dataframe() to generate
+        dataframe.
         """
         return self._df
 
@@ -64,9 +66,12 @@ class ScheduleData:
         for schedule in self._schedule:
             for lesson in schedule.lessons:
                 # if is not LessonEmpty type
-                if type(lesson) is not LessonEmpty:
-                    if lesson.room is not None and lesson.room not in rooms:
-                        rooms.append(lesson.room)
+                if (
+                    type(lesson) is not LessonEmpty
+                    and lesson.room is not None
+                    and lesson.room not in rooms
+                ):
+                    rooms.append(lesson.room)
 
         return rooms
 
@@ -91,8 +96,9 @@ class ScheduleData:
 
         return groups
 
-    def get_units(self):
-        pass
-
-    def get_times(self):
-        pass
+    # TODO:
+    # def get_units(self):
+    #     pass
+    #
+    # def get_times(self):
+    #     pass

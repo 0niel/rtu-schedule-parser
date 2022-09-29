@@ -14,6 +14,10 @@ from rtu_schedule_parser.downloader.schedule_document import ScheduleDocument
 
 requests.adapters.DEFAULT_RETRIES = 5
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -68,24 +72,24 @@ class ScheduleDownloader:
             old_file = open(path, "rb").read()
             new_file = requests.get(url).content
 
-            if old_file != new_file:
-                try:
-                    file_content = self.__request_file(url)
-                    with open(path, "wb") as file:
-                        file.write(file_content)
-                    return path, True
-                except Exception as ex:
-                    logger.error(f"Download failed with error: {ex}")
-            else:
+            if old_file == new_file:
                 return path, False
 
+            try:
+                return self.__extracted_from___download_schedule_20(url, path)
+            except Exception as ex:
+                logger.error(f"Download failed with error: {ex}")
         try:
-            file_content = self.__request_file(url)
-            with open(path, "wb") as file:
-                file.write(file_content)
-            return path, True
+            return self.__extracted_from___download_schedule_20(url, path)
         except Exception as ex:
             logger.error(f"Download failed with error: {ex}")
+
+    # TODO Rename this here and in `__download_schedule`
+    def __extracted_from___download_schedule_20(self, url, path):
+        file_content = self.__request_file(url)
+        with open(path, "wb") as file:
+            file.write(file_content)
+        return path, True
 
     def __request_file(self, url: str) -> bytes:
         try:
@@ -112,7 +116,7 @@ class ScheduleDownloader:
         progress_all = len(documents)
         downloaded_files = 0
 
-        res = list()
+        res = []
 
         for document in documents:
             url = document.url
@@ -150,12 +154,12 @@ class ScheduleDownloader:
                     )
 
             except Exception as ex:
-                logger.error(f"[{url}] message:" + str(ex))
+                logger.error(f"[{url}] message:{str(ex)}")
 
         return res
 
     def __parse_institute_cards(self, element: bs4.Tag) -> dict[Institute, bs4.Tag]:
-        res = dict()
+        res = {}
         institutes_names = [institute.name for institute in Institute]
         institutes_cards = element.select(
             "li > div > div > .uk-card.slider_ads.uk-card-body.uk-card-small > .uk-grid-small"
@@ -164,14 +168,14 @@ class ScheduleDownloader:
             for institutes_name in institutes_names:
                 if institutes_name in card.get_text():
                     institute = Institute.get_by_name(institutes_name)
-                    res.update({institute: card})
+                    res[institute] = card
                     break
         return res
 
     def __parse_links_by_type(
         self, document_types: ScheduleType, element: bs4.Tag
     ) -> list[str]:
-        document_links = list()
+        document_links = []
 
         document_type_title = self._SCHEDULE_TYPE_HEADERS[document_types]
         schedule_titles = element.find_all("b", class_="uk-h3")
@@ -184,19 +188,19 @@ class ScheduleDownloader:
                         # расписанием. Это нужно, т.к. эти блоки не имеют вложенности и довольно сложно определить
                         # где начинаются и кончаются ссылки.
                         for j in range(i + 1, len(all_divs)):
-                            # 'uk-h3' - класс заголовка расписания
                             if (
-                                "uk-h3" not in str(all_divs[j])
-                                and all_divs[j].text != document_type_title
+                                "uk-h3" in str(all_divs[j])
+                                or all_divs[j].text == document_type_title
                             ):
-                                document = all_divs[j].find(
-                                    "a", {"class": "uk-link-toggle"}
-                                )
-                                if document is not None:
-                                    if document["href"] not in document_links:
-                                        document_links.append(document["href"])
-                            else:
                                 break
+                            document = all_divs[j].find(
+                                "a", {"class": "uk-link-toggle"}
+                            )
+                            if (
+                                document is not None
+                                and document["href"] not in document_links
+                            ):
+                                document_links.append(document["href"])
         return document_links
 
     def download(self, schedule_document: ScheduleDocument) -> tuple[str, bool]:
@@ -280,14 +284,13 @@ class ScheduleDownloader:
         # "БАКАЛАВРИАТ/СПЕЦИАЛИТЕТ", "МАГИСТРАТУРА", "АСПИРАНТУРА", "КОЛЛЕДЖ", "ЭКСТЕРНЫ"
         tabs_content = list(tabs_content.find_all("li"))[:4]  # first 4 tabs
 
-        institute_schedule_cards = dict()  # type: dict[Degree, dict[Institute, bs.Tag]]
+        institute_schedule_cards = {}
 
         for i in range(len(tabs_content)):
-            if specific_degrees:
-                if i + 1 not in [
-                    specific_degree.value for specific_degree in specific_degrees
-                ]:
-                    continue
+            if specific_degrees and i + 1 not in [
+                specific_degree.value for specific_degree in specific_degrees
+            ]:
+                continue
 
             degree = Degree(i + 1)
             institute_schedule_cards[degree] = self.__parse_institute_cards(
@@ -295,34 +298,34 @@ class ScheduleDownloader:
             )
 
         if specific_institutes:
-            for degree in institute_schedule_cards:
-                for institute in list(institute_schedule_cards[degree]):
+            for degree, value in institute_schedule_cards.items():
+                for institute in list(value):
                     if institute not in specific_institutes:
                         institute_schedule_cards[degree].pop(institute)
 
         if not specific_schedule_types:
             specific_schedule_types = set(ScheduleType)
 
-        schedule_documents = list()
+        schedule_documents = []
 
-        for degree in institute_schedule_cards:
-            for institute in institute_schedule_cards[degree]:
+        for degree, value_ in institute_schedule_cards.items():
+            for institute in value_:
                 for specific_document_type in specific_schedule_types:
                     links = self.__parse_links_by_type(
                         specific_document_type,
                         institute_schedule_cards[degree][institute],
                     )
-                    for link in links:
-                        schedule_documents.append(
-                            ScheduleDocument(
-                                institute,
-                                specific_document_type,
-                                degree,
-                                academic_calendar.get_period(
-                                    datetime.datetime.now().date()
-                                ),
-                                link,
-                            )
+                    schedule_documents.extend(
+                        ScheduleDocument(
+                            institute,
+                            specific_document_type,
+                            degree,
+                            academic_calendar.get_period(
+                                datetime.datetime.now().date()
+                            ),
+                            link,
                         )
+                        for link in links
+                    )
 
         return schedule_documents

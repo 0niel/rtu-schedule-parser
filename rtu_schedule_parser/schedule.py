@@ -16,15 +16,15 @@ from rtu_schedule_parser.constants import (
 from rtu_schedule_parser.utils.academic_calendar import Period, Weekday
 
 
-@dataclass
+@dataclass(frozen=True)
 class Room:
     """
     Room data class.
     """
 
-    name: str
-    campus: Campus | None = None
-    room_type: RoomType | None = None
+    name: str = field()
+    campus: Campus | None = field(default_factory=lambda: None)
+    room_type: RoomType | None = field(default_factory=lambda: None)
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Lesson:
     subgroup: int | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class LessonEmpty:
     """
     Empty lesson. This is a cell in the schedule table that does not contain any information about the lesson. Used
@@ -124,7 +124,7 @@ class Schedule:
                     lesson_room_type.value if lesson_room_type is not None else np.nan
                 )
                 weeks = ",".join(str(week) for week in lesson.weeks)
-                teachers = ",".join(teacher for teacher in lesson.teachers)
+                teachers = ",".join(lesson.teachers)
                 lesson_type = lesson.type.value if lesson.type is not None else np.nan
                 df.loc[len(df)] = [
                     self.group,
@@ -139,7 +139,7 @@ class Schedule:
                     lesson_room,
                     lesson_campus,
                     lesson_room_type,
-                    lesson.subgroup if lesson.subgroup else np.nan,
+                    lesson.subgroup or np.nan,
                 ]
 
         return df
