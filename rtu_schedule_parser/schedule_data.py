@@ -36,14 +36,16 @@ class ScheduleData:
         Append schedule to schedule data.
         """
         self._schedule.append(schedule)
-        self._df = self.generate_dataframe()
+        if self._df:
+            self._df = self.generate_dataframe()
 
     def extend(self, schedule: list[Schedule]):
         """
         Extend schedule data with another schedule data.
         """
         self._schedule.extend(schedule)
-        self._df = self.generate_dataframe()
+        if self._df:
+            self._df = self.generate_dataframe()
 
     def get_schedule(self) -> list[Schedule]:
         """

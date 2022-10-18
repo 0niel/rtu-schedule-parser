@@ -10,7 +10,6 @@ from enum import IntEnum
 from typing import Any, Generator
 
 from openpyxl import load_workbook
-from openpyxl.cell.read_only import EmptyCell
 from openpyxl.worksheet.worksheet import Worksheet
 from xls2xlsx import XLS2XLSX
 
@@ -52,7 +51,7 @@ class _ColumnDataType(IntEnum):
 
 
 @dataclass
-class _LessonCell:
+class _LessonRow:
     """Represents a cell in the schedule table."""
 
     weekday: academic_calendar.Weekday
@@ -60,7 +59,7 @@ class _LessonCell:
     time_start: datetime.time  # The start time of the lesson
     time_end: datetime.time  # The end time of the lesson
     week: int  # Parity of the week. 1 - odd, 2 - even
-    row_index: int  # Index of the row in the table
+    row: tuple[str, ...]  # The row of the table
 
 
 class ExcelScheduleParser(ScheduleParser):
@@ -84,7 +83,6 @@ class ExcelScheduleParser(ScheduleParser):
 
         if self._document_path.endswith(".xls"):
             x2x = XLS2XLSX(self._document_path)
-            # rename *.xls to *.xlsx
             self._document_path = f"{os.path.splitext(self._document_path)[0]}.xlsx"
             x2x.to_xlsx(self._document_path)
 
@@ -108,7 +106,7 @@ class ExcelScheduleParser(ScheduleParser):
 
     def __find_group_row(self, worksheet) -> int | None:
         """Find the row containing the group name."""
-        for row in worksheet.iter_rows(max_row=20, max_col=50):
+        for row in worksheet.iter_rows(max_row=20, max_col=30):
             for cell in row:
                 if self.RE_GROUP_NAME.match(str(cell.value)):
                     return cell.row
@@ -137,7 +135,7 @@ class ExcelScheduleParser(ScheduleParser):
             return None
 
     def __parse_lessons(
-        self, group_column: int, lesson_cells: list[_LessonCell], worksheet: Worksheet
+        self, group_column: int, lesson_rows: list[_LessonRow], worksheet: Worksheet
     ) -> Generator[Lesson | LessonEmpty, None, None]:
         """
         Parses the lessons for the group. The lessons are parsed from the table in the worksheet. The lessons are
@@ -145,87 +143,85 @@ class ExcelScheduleParser(ScheduleParser):
         column specified by the group_column parameter.
         """
         group_column -= 1
-        for lesson_cell in lesson_cells:
-            for row_index, row in enumerate(worksheet.rows):
-                if lesson_cell.row_index != row_index:
-                    continue
+        for lesson_row_data in lesson_rows:
+            row = lesson_row_data.row
 
-                subjects = row[group_column + _ColumnDataType.SUBJECT].value
-                types = row[group_column + _ColumnDataType.TYPE].value
-                teachers = row[group_column + _ColumnDataType.TEACHER].value
-                teachers = str(teachers) if teachers else ""
-                rooms = row[group_column + _ColumnDataType.ROOM].value
-                rooms = str(rooms) if rooms else ""
+            subjects = row[group_column + _ColumnDataType.SUBJECT].value
+            types = row[group_column + _ColumnDataType.TYPE].value
+            teachers = row[group_column + _ColumnDataType.TEACHER].value
+            teachers = str(teachers) if teachers else ""
+            rooms = row[group_column + _ColumnDataType.ROOM].value
+            rooms = str(rooms) if rooms else ""
 
-                if subjects is None or subjects.strip() == "":
-                    yield LessonEmpty(
-                        lesson_cell.num,
-                        lesson_cell.weekday,
-                        lesson_cell.time_start,
-                        lesson_cell.time_end,
+            if subjects is None or subjects.strip() == "":
+                yield LessonEmpty(
+                    lesson_row_data.num,
+                    lesson_row_data.weekday,
+                    lesson_row_data.time_start,
+                    lesson_row_data.time_end,
+                )
+            else:
+                is_even_week = lesson_row_data.week % 2 == 0
+
+                lesson_names = self._formatter.get_lessons(subjects)
+                lesson_weeks = self._formatter.get_weeks(
+                    subjects, is_even_week, academic_calendar.MAX_WEEKS
+                )
+
+                if len(lesson_weeks) == 0:
+                    raise ValueError("Invalid lesson weeks")
+
+                lesson_teachers, lesson_types, lesson_rooms = None, None, None
+                if teachers:
+                    lesson_teachers = self._formatter.get_teachers(teachers)
+                if types:
+                    lesson_types = self._formatter.get_types(types)
+                if rooms:
+                    lesson_rooms = self._formatter.get_rooms(rooms)
+
+                lessons_len = len(lesson_names)
+
+                for i in range(lessons_len):
+                    lesson_type = (
+                        self.__get_lesson_element(lessons_len, i, lesson_types)
+                        if lesson_types
+                        else None
                     )
-                else:
-                    is_even_week = lesson_cell.week % 2 == 0
-
-                    lesson_names = self._formatter.get_lessons(subjects)
-                    lesson_weeks = self._formatter.get_weeks(
-                        subjects, is_even_week, academic_calendar.MAX_WEEKS
+                    lesson_room = (
+                        self.__get_lesson_element(lessons_len, i, lesson_rooms)
+                        if lesson_rooms
+                        else None
                     )
+                    lesson_teachers = lesson_teachers or []
 
-                    if len(lesson_weeks) == 0:
-                        raise ValueError("Invalid lesson weeks")
-
-                    lesson_teachers, lesson_types, lesson_rooms = None, None, None
-                    if teachers:
-                        lesson_teachers = self._formatter.get_teachers(teachers)
-                    if types:
-                        lesson_types = self._formatter.get_types(types)
-                    if rooms:
-                        lesson_rooms = self._formatter.get_rooms(rooms)
-
-                    lessons_len = len(lesson_names)
-
-                    for i in range(lessons_len):
-                        lesson_type = (
-                            self.__get_lesson_element(lessons_len, i, lesson_types)
-                            if lesson_types
-                            else None
-                        )
-                        lesson_room = (
-                            self.__get_lesson_element(lessons_len, i, lesson_rooms)
-                            if lesson_rooms
-                            else None
-                        )
-                        lesson_teachers = lesson_teachers or []
-
-                        yield Lesson(
-                            lesson_cell.num,
-                            lesson_names[i][0],
-                            lesson_weeks[i],
-                            lesson_cell.weekday,
-                            lesson_teachers,
-                            lesson_cell.time_start,
-                            lesson_cell.time_end,
-                            lesson_names[i][1] or lesson_type,
-                            lesson_room,
-                            lesson_names[i][2],
-                        )
+                    yield Lesson(
+                        lesson_row_data.num,
+                        lesson_names[i][0],
+                        lesson_weeks[i],
+                        lesson_row_data.weekday,
+                        lesson_teachers,
+                        lesson_row_data.time_start,
+                        lesson_row_data.time_end,
+                        lesson_names[i][1] or lesson_type,
+                        lesson_room,
+                        lesson_names[i][2],
+                    )
 
     def __get_lesson_cells(
         self, group_cell_index: int, group_row_index: int, worksheet: Worksheet
-    ) -> Generator[_LessonCell, None, None]:
+    ) -> Generator[_LessonRow, None, None]:
         """
-        Returns a list of `_LessonCell` objects. The list contains the cells in the table that contain the lessons.
+        Returns a list of `_LessonRow` objects. The list contains the cells in the table that contain the lessons.
         """
 
         # Header line with the names of the columns after the group name
         initial_row_num = group_row_index + 2
 
-        row_count = worksheet.max_row
-        row_count = min(row_count, 150)
+        row_count = min(worksheet.max_row, 100)
 
         weekday, lesson_num, time_start, time_end = None, None, None, None
 
+        group_cell_index -= 1  # Convert to 0-based index
         for row in worksheet.iter_rows(min_row=initial_row_num, max_row=row_count):
             # The parity of the week is determined by the row number in the table. The rest through the line, so
             # find the parity of the week in each iteration (row).
@@ -238,39 +234,15 @@ class ExcelScheduleParser(ScheduleParser):
 
             week = None
 
-            row_index = None
-
-            (
-                weekday_cell_value,
-                lesson_num_cell_value,
-                start_time_cell_value,
-                end_time_cell_value,
-                week_cell_value,
-            ) = (None, None, None, None, None)
-
-            for cell in row:
-                if type(cell) is EmptyCell:
-                    continue
-
-                row_index = cell.row
-                column_index = cell.column
-
-                # Week is a last column
-                if column_index > group_cell_index + _ColumnDataType.WEEK:
-                    break
-                elif column_index < group_cell_index + _ColumnDataType.WEEKDAY:
-                    continue
-
-                if column_index == group_cell_index + _ColumnDataType.WEEKDAY:
-                    weekday_cell_value = cell.value
-                elif column_index == group_cell_index + _ColumnDataType.LESSON_NUMBER:
-                    lesson_num_cell_value = cell.value
-                elif column_index == group_cell_index + _ColumnDataType.START_TIME:
-                    start_time_cell_value = cell.value
-                elif column_index == group_cell_index + _ColumnDataType.END_TIME:
-                    end_time_cell_value = cell.value
-                elif column_index == group_cell_index + _ColumnDataType.WEEK:
-                    week_cell_value = cell.value
+            weekday_cell_value = row[group_cell_index + _ColumnDataType.WEEKDAY].value
+            lesson_num_cell_value = row[
+                group_cell_index + _ColumnDataType.LESSON_NUMBER
+            ].value
+            start_time_cell_value = row[
+                group_cell_index + _ColumnDataType.START_TIME
+            ].value
+            end_time_cell_value = row[group_cell_index + _ColumnDataType.END_TIME].value
+            week_cell_value = row[group_cell_index + _ColumnDataType.WEEK].value
 
             with contextlib.suppress(ValueError):
                 if weekday_cell_value:
@@ -299,8 +271,8 @@ class ExcelScheduleParser(ScheduleParser):
                     week = 2
 
                 if weekday and lesson_num and time_start and time_end and week:
-                    yield _LessonCell(
-                        weekday, lesson_num, time_start, time_end, week, row_index
+                    yield _LessonRow(
+                        weekday, lesson_num, time_start, time_end, week, row
                     )
 
     def __parse_worksheet(self, worksheet: Worksheet, force: bool = False):
