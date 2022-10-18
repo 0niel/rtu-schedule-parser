@@ -13,7 +13,7 @@ requires = [
     "openpyxl>=3.0.4",
     "requests>=6.7",
     "beautifulsoup4==4.11.1",
-    "openpyxl>=2.5.8",
+    "openpyxl>=3.0.10",
     "pandas>=1.4.3",
     "xls2xlsx==0.1.5",
     "currency-symbols==1.0.0",
@@ -23,7 +23,7 @@ requires = [
 def setup_package():
     metadata = dict(
         name="rtu-schedule-parser",
-        version="0.1.1",
+        version="0.2.0",
         description="Easy extraction of the MIREA - Russian Technological University schedule from Excel documents.",
         long_description=readme,
         author="Oniel (Sergey Dmitriev)",

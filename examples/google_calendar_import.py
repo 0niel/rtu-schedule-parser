@@ -60,9 +60,8 @@ if __name__ == "__main__":
                 end_date = start_date
                 description = ", ".join(lesson.teachers)
                 location = lesson.room.name if lesson.room else ""
-                if lesson.room:
-                    if lesson.room.campus:
-                        location = f"{location} ({lesson.room.campus.short_name})"
+                if lesson.room and lesson.room.campus:
+                    location = f"{location} ({lesson.room.campus.short_name})"
 
                 row = {
                     "Subject": subject,
