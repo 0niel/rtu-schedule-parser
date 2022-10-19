@@ -34,7 +34,7 @@ jobs:
     - name: Generate coverage report
       run: |
         source .venv/bin/activate
-        pytest --ignore=tests/schedule_downloader --cov=./rtu_schedule_parser --cov-report=xml
+        pytest --ignore=tests\schedule_downloader\ --cov=./rtu_schedule_parser --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
