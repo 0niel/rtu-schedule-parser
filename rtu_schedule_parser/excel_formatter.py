@@ -320,6 +320,9 @@ class ExcelFormatter(Formatter):
 
         rooms_cell_value = self.__fix_room_typos(rooms_cell_value)
 
+        # Convert values like "Г-101а" to "Г-101-а"
+        rooms_cell_value = re.sub(r"(\d)([а-яА-Я])", r"\g<1>-\g<2>", rooms_cell_value)
+
         # Regex explanation:
         # 1. ([а-яА-Я]+)\. - room type (e.g. "лаб.")
         # 2. ([а-яА-Я0-9-]+) - room name (e.g. "А-101")

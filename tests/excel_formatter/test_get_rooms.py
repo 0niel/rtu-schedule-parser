@@ -71,3 +71,21 @@ def test_get_rooms_10(excel_formatter):
         Room("А-2", Campus.V_78, RoomType.AUDITORY),
     ]
     assert result == correct_result
+
+
+def test_get_rooms_11(excel_formatter):
+    result = excel_formatter.get_rooms("ауд. А-140а (В-78)")
+    correct_result = [
+        Room("А-140-а", Campus.V_78, RoomType.AUDITORY),
+    ]
+    assert result == correct_result
+
+
+def test_get_rooms_12(excel_formatter):
+    result = excel_formatter.get_rooms("ауд. Г-101б (В-78)\n\nлаб. М-110в (В-86)")
+    correct_result = [
+        Room("Г-101-б", Campus.V_78, RoomType.AUDITORY),
+        Room("М-110-в", Campus.V_86, RoomType.LABORATORY),
+    ]
+    assert result == correct_result
+
