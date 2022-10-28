@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/mirea-ninja/rtu-schedule-parser/branch/main/graph/badge.svg?token=W98TXURMYZ)](https://codecov.io/gh/mirea-ninja/rtu-schedule-parser)
+
 # rtu-schedule-parser
 Easy extraction of the MIREA - Russian Technological University schedule from Excel documents.
 
