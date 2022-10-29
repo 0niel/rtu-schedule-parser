@@ -23,7 +23,7 @@ requires = [
 def setup_package():
     metadata = dict(
         name="rtu-schedule-parser",
-        version="0.2.0",
+        version="0.2.1",
         description="Easy extraction of the MIREA - Russian Technological University schedule from Excel documents.",
         long_description=readme,
         author="Oniel (Sergey Dmitriev)",
@@ -34,6 +34,8 @@ def setup_package():
         install_requires=requires,
         classifiers=[
             "License :: OSI Approved :: MIT License",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.`0`",
         ],
