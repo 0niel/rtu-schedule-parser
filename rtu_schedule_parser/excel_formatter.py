@@ -335,7 +335,7 @@ class ExcelFormatter(Formatter):
                     self.ROOM_TYPE_SHORT_NAMES[room[0]],
                 )
 
-            except KeyError:
+            except ValueError:
                 return Room(
                     room[1],
                     None,
