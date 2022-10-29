@@ -15,9 +15,9 @@ class ScheduleData:
         self._df = None
 
         if generate_dataframe:
-            self._df = self.generate_dataframe()
+            self.generate_dataframe()
 
-    def generate_dataframe(self):
+    def generate_dataframe(self) -> None:
         """
         Generate pandas dataframe.
         """
@@ -29,7 +29,7 @@ class ScheduleData:
 
         df.index = range(len(df))
 
-        return df
+        self._df = df
 
     def append(self, schedule: Schedule):
         """
