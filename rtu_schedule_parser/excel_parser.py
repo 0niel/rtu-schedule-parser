@@ -14,10 +14,10 @@ from openpyxl.worksheet.worksheet import Worksheet
 from xls2xlsx import XLS2XLSX
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
-from rtu_schedule_parser.constants import Degree, Institute
+from rtu_schedule_parser.constants import Campus, Degree, Institute
 from rtu_schedule_parser.excel_formatter import ExcelFormatter
 from rtu_schedule_parser.parser import ScheduleParser
-from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Schedule
+from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Room, Schedule
 from rtu_schedule_parser.schedule_data import ScheduleData
 
 __all__ = ["ExcelScheduleParser"]
@@ -63,6 +63,12 @@ class _LessonRow:
 
 
 class ExcelScheduleParser(ScheduleParser):
+    # Campuses used by default if the campus is not specified in the schedule
+    _DEFAULT_CAMPUS = {
+        Institute.IIT: Campus.V_78,
+        Institute.ITHT: Campus.V_86,
+    }
+
     # Group name regex pattern
     RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
 
@@ -134,6 +140,16 @@ class ExcelScheduleParser(ScheduleParser):
         else:
             return None
 
+    def __set_default_campus(self, room: Room) -> Room:
+        """Sets the campus to the default value if the campus is not specified."""
+        new_room = room
+        if new_room.campus is None and self._institute in self._DEFAULT_CAMPUS:
+            new_room = Room(
+                room.name, self._DEFAULT_CAMPUS[self._institute], room.room_type
+            )
+
+        return new_room
+
     def __parse_lessons(
         self, group_column: int, lesson_rows: list[_LessonRow], worksheet: Worksheet
     ) -> Generator[Lesson | LessonEmpty, None, None]:
@@ -192,6 +208,10 @@ class ExcelScheduleParser(ScheduleParser):
                         if lesson_rooms
                         else None
                     )
+
+                    if lesson_room:
+                        lesson_room = self.__set_default_campus(lesson_room)
+
                     lesson_teachers = lesson_teachers or []
 
                     yield Lesson(

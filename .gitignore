@@ -40,7 +40,8 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 *.xls
-*.xlsx
+*.xlsx 
+!test_schedule.xlsx
 *.docx
 *.pdf
 *.csv
