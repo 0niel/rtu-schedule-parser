@@ -2,8 +2,11 @@ import os
 
 import pytest
 
+from rtu_schedule_parser import ExcelScheduleParser
+from rtu_schedule_parser.constants import Institute, Degree
 from rtu_schedule_parser.downloader.schedule_downloader import ScheduleDownloader
 from rtu_schedule_parser.formatter import Formatter
+from rtu_schedule_parser.utils import Period
 
 
 @pytest.fixture()
@@ -12,6 +15,19 @@ def excel_formatter() -> Formatter:
 
     return ExcelFormatter()
 
+
+def test_schedule_file_path() -> str:
+    return os.path.join(os.path.dirname(__file__), "test_schedule.xlsx")
+
+
+@pytest.fixture()
+def excel_parser() -> ExcelScheduleParser:
+    return ExcelScheduleParser(
+        test_schedule_file_path(),
+        Period(2022, 2023, 1),
+        Institute.III,
+        Degree.BACHELOR,
+    )
 
 @pytest.fixture()
 def schedule_downloader() -> ScheduleDownloader:
