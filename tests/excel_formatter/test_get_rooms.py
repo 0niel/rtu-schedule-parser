@@ -71,8 +71,6 @@ def test_get_rooms_10(excel_formatter):
         Room("А-2", Campus.V_78, RoomType.AUDITORY),
     ]
     assert result == correct_result
-<<<<<<< Updated upstream
-=======
 
 
 def test_get_rooms_11(excel_formatter):
@@ -98,4 +96,4 @@ def test_get_rooms_13(excel_formatter):
         Room("Г-101-б", None, RoomType.AUDITORY),
     ]
     assert result == correct_result
->>>>>>> Stashed changes
+    
