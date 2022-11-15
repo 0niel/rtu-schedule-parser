@@ -60,7 +60,7 @@ napoleon_attr_annotations = True
 templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 
-language = "ru"
+language = "en"
 
 # The short X.Y version.
 version = rtu_schedule_parser.__version__
