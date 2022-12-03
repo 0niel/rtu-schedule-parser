@@ -1,17 +1,24 @@
+import logging
+
 from rtu_schedule_parser.constants import Degree, Institute, ScheduleType
 
 
 def test_get_docs_0(schedule_downloader):
     result = schedule_downloader.get_documents()
     assert len(result) > 0
-    institutes = [doc.institute for doc in result]
+    institutes = {doc.institute for doc in result}
+    degrees = {doc.degree for doc in result}
     assert Institute.IIT in institutes
     assert Institute.IKB in institutes
+    assert Degree.PHD in degrees
+
+    if len(institutes) == len(Institute) and len(degrees) == len(Degree) - 1:  # -1 because of college
+        assert len(result) >= 4 * len(Institute) + 2 * len(Institute) + 4 * len(Institute)
 
 
 def test_get_docs_1(schedule_downloader):
     result = schedule_downloader.get_documents(specific_institutes={Institute.IIT})
-    institutes = set([doc.institute for doc in result])
+    institutes = {doc.institute for doc in result}
     assert len(institutes) == 1
     assert Institute.IIT in institutes
 
@@ -21,8 +28,8 @@ def test_get_docs_2(schedule_downloader):
         specific_institutes={Institute.IIT, Institute.IKB},
         specific_degrees={Degree.BACHELOR, Degree.MASTER},
     )
-    institutes = set([doc.institute for doc in result])
-    degrees = set([doc.degree for doc in result])
+    institutes = {doc.institute for doc in result}
+    degrees = {doc.degree for doc in result}
     assert len(institutes) == 2
     assert len(degrees) == 2
     assert Institute.IIT in institutes

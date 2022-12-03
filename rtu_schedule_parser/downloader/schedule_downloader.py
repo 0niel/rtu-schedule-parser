@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import os
+import re
 
 import bs4
 import requests
@@ -133,6 +134,18 @@ class ScheduleDownloader:
 
                 os.makedirs(file_dir, exist_ok=True)
 
+                # Remove all date patterns from the file name (e.g. 2021_2022, 22_23, 07.09.2021, 2023, etc.)
+                file_root = (
+                    re.sub(
+                        r"(\d{2}_\d{2}|\d{4}_\d{4}|\d{2}\.\d{2}\.\d{4}|\d{4})",
+                        "",
+                        file_root,
+                    )
+                    .strip()
+                    .replace("__", "_")
+                )
+
+                file_name = f"{file_root}__{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}{file_ext}"
                 path_to_file = os.path.join(file_dir, file_name)
 
                 os.makedirs(os.path.join(self._base_file_dir, subdir), exist_ok=True)
