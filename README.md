@@ -53,10 +53,10 @@ df.to_csv("schedule.csv")
 # Installation
 ### From the source code
 ```bash
-$ git clone https://github.com/mirea-ninja/rtu-curriculum-parser
+$ git clone https://github.com/mirea-ninja/rtu-schedule-parser
 ```
 and then install using pip:
 ```console
-$ cd rtu-curriculum-parser
+$ cd rtu-schedule-parser
 $ python -m pip install .
 ```
