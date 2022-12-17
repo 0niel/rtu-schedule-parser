@@ -64,7 +64,9 @@ class Formatter(metaclass=ABCMeta):
             A list of teacher names. If the teacher is not specified in the table cell, the list will be empty.
             Usually each schedule subject has only one teacher, but sometimes there are two or more teachers for one
             subject. For example, in the case of a laboratory. Usually the teacher's type_name is specified in the form
-            of a surname and initials. For example, "Иванов И.И.".
+            of a surname and initials. For example, "Иванов И.И.". The names are returned in a normalized form. For
+            example, "Иванов И. И" will be returned as "Иванов И.И.", and "И.И. Иванов" will be returned as
+            "Иванов И.И.".
         """
         raise NotImplementedError
 

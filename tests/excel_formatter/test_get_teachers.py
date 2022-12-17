@@ -69,3 +69,13 @@ def test_get_teacher_10(excel_formatter):
 def test_get_teacher_11(excel_formatter):
     result = excel_formatter.get_teachers("123")
     assert result == []
+
+
+def test_get_teacher_12(excel_formatter):
+    result = excel_formatter.get_teachers("Ким Ю.Х, Ким Ю.Х., Ким Ю. Х., Ким Ю.Х")
+    assert result == ["Ким Ю.Х.", "Ким Ю.Х.", "Ким Ю.Х.", "Ким Ю.Х."]
+
+
+def test_get_teacher_13(excel_formatter):
+    result = excel_formatter.get_teachers("Эйстрих-Геллер В.Ю, Эйстрих-Геллер В Ю.")
+    assert result == ["Эйстрих-Геллер В.Ю.", "Эйстрих-Геллер В.Ю."]

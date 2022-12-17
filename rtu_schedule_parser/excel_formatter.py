@@ -394,13 +394,34 @@ class ExcelFormatter(Formatter):
 
         names = re.split(self._RE_SEPARATORS, teachers_names)
 
+        def normalize_names(names_to_normalize: list[str]) -> list[str]:
+            # Format names like "Иванов И.И.", "Иванов И. И.", "Иванов И И.", "Иванов И. И" and etc to "Иванов И.И."
+            return [
+                re.sub(
+                    r"([а-яА-ЯёЁ\-]+) ([а-яА-ЯёЁ])\.? ?([а-яА-ЯёЁ])\.?",
+                    r"\g<1> \g<2>.\g<3>.",
+                    name,
+                )
+                for name in names_to_normalize
+            ]
+
         if len(names) > 1:
-            return [name.strip() for name in names if name.strip() != ""]
+            return [
+                name.strip() for name in normalize_names(names) if name.strip() != ""
+            ]
+
         # Names with initials (e.g. И.И. Иванов) may be separated by spaces
         re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
-
-        # Search fon names in a string without case sensitivity
         found = re.findall(re_teacher_name, teachers_names, flags=re.I)
+
+        # Format this names to "Иванов И.И." format
+        re_name = r"([а-яА-ЯёЁ]+)\s+([а-яА-ЯёЁ]+)\.?\s+([а-яА-ЯёЁ]+)\.?"
+        found = [
+            re.sub(re_name, r"\g<1> \g<2>.\g<3>.", name).strip()
+            for name in normalize_names(found)
+            if name
+        ]
+
         return [x.strip() for x in found]
 
     def __get_lesson_type(self, type_name: str) -> LessonType | None:
