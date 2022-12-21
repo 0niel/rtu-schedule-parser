@@ -213,7 +213,7 @@ class ExamsSchedule(_Schedule):
     def _generate_dataframe(self):
         """
         Convert schedule to pandas dataframe. The dataframe contains the following columns: `group`, `month`, `day`,
-        `exam`, `teachers`, `rooms`, `exam_type`.
+        `exam`, `teachers`, `rooms`, `exam_type`, `time_start`.
         """
         df = pd.DataFrame(
             columns=[
@@ -224,6 +224,7 @@ class ExamsSchedule(_Schedule):
                 "teachers",
                 "rooms",
                 "exam_type",
+                "time_start",
             ]
         )
 
@@ -241,6 +242,7 @@ class ExamsSchedule(_Schedule):
                     "консультация"
                     if exam.exam_type == ExamType.CONSULTATION
                     else "экзамен",
+                    exam.time_start,
                 ]
 
         return df
