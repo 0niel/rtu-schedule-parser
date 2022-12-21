@@ -3,7 +3,7 @@ import os
 import pytest
 
 from rtu_schedule_parser import ExcelScheduleParser
-from rtu_schedule_parser.constants import Institute, Degree
+from rtu_schedule_parser.constants import Degree, Institute
 from rtu_schedule_parser.downloader.schedule_downloader import ScheduleDownloader
 from rtu_schedule_parser.formatter import Formatter
 from rtu_schedule_parser.utils import Period
@@ -28,6 +28,7 @@ def excel_parser() -> ExcelScheduleParser:
         Institute.III,
         Degree.BACHELOR,
     )
+
 
 @pytest.fixture()
 def schedule_downloader() -> ScheduleDownloader:

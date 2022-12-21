@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime
+from abc import ABCMeta
 from dataclasses import dataclass, field
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -9,11 +11,12 @@ import pandas as pd
 from rtu_schedule_parser.constants import (
     Campus,
     Degree,
+    ExamType,
     Institute,
     LessonType,
     RoomType,
 )
-from rtu_schedule_parser.utils.academic_calendar import Period, Weekday
+from rtu_schedule_parser.utils.academic_calendar import Month, Period, Weekday
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,32 @@ class Lesson:
     subgroup: int | None = None
 
 
+@dataclass
+class Exam:
+    """
+    Exam data class. Contains information about exam.
+    """
+
+    month: Month
+    day: int
+    name: str
+    time_start: datetime.time
+    teachers: list[str]
+    rooms: list[Room]
+    exam_type: ExamType
+
+
+@dataclass
+class ExamEmpty:
+    """
+    ExamEmpty data class. This is a cell in the schedule table that does not contain any information about the exam. It
+    is used to fill the schedule table with empty cells.
+    """
+
+    month: Month
+    day: int
+
+
 @dataclass(frozen=True)
 class LessonEmpty:
     """
@@ -60,19 +89,36 @@ class LessonEmpty:
 
 
 @dataclass
-class Schedule:
+class _Schedule(metaclass=ABCMeta):
     """
-    Schedule data class. Contains information about the schedule of a group. The schedule is a list of lessons. Each
-    lesson is a `Lesson` data class or `LessonEmpty` data class (if the cell in the schedule table is empty).
+    For internal use only. Abstract class for schedule data. Contains information about the schedule of a group.
     """
 
     group: str
-    lessons: list[Lesson | LessonEmpty]
     period: Period
     institute: Institute
     degree: Degree
 
-    _dataframe: pd.DataFrame = field(init=False, repr=False, default=None)
+    document_url: Optional[str] = field(default_factory=lambda: None)
+
+    _dataframe: pd.DataFrame | None = field(init=False, repr=False, default=None)
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """
+        Get pandas dataframe.
+        """
+        raise NotImplementedError(
+            "Method is not implemented. Use `LessonsSchedule` or `ExamsSchedule` instead."
+        )
+
+
+@dataclass
+class LessonsSchedule(_Schedule):
+    """
+    Schedule data class for lessons (semester schedule or test session schedule).
+    """
+
+    lessons: list[Lesson | LessonEmpty] = field(default_factory=lambda: [])
 
     def get_dataframe(self) -> pd.DataFrame:
         """
@@ -140,6 +186,61 @@ class Schedule:
                     lesson_campus,
                     lesson_room_type,
                     lesson.subgroup or np.nan,
+                ]
+
+        return df
+
+
+@dataclass
+class ExamsSchedule(_Schedule):
+    """
+    Schedule data class for exams.
+    """
+
+    exams: list[Exam | ExamEmpty] = field(default_factory=lambda: [])
+
+    def get_dataframe(self) -> pd.DataFrame:
+        """
+        Get pandas dataframe. The dataframe contains the following columns: `group`, `month`, `day`,
+        `exam`, `teachers`, `rooms`, `campus`, `room_type`, `exam_type`. If the dataframe has already been generated,
+        then it will be returned from the cache. Otherwise, the dataframe will be generated and cached.
+        """
+        if self._dataframe is None:
+            self._dataframe = self._generate_dataframe()
+
+        return self._dataframe
+
+    def _generate_dataframe(self):
+        """
+        Convert schedule to pandas dataframe. The dataframe contains the following columns: `group`, `month`, `day`,
+        `exam`, `teachers`, `rooms`, `exam_type`.
+        """
+        df = pd.DataFrame(
+            columns=[
+                "group",
+                "month",
+                "day",
+                "exam",
+                "teachers",
+                "rooms",
+                "exam_type",
+            ]
+        )
+
+        for exam in self.exams:
+            if type(exam) is not ExamEmpty:
+                exam_rooms = ",".join(map(lambda room: room.name, exam.rooms))
+                exam_teachers = ",".join(exam.teachers)
+                df.loc[len(df)] = [
+                    self.group,
+                    exam.month,
+                    exam.day,
+                    exam.name,
+                    exam_teachers,
+                    exam_rooms,
+                    "консультация"
+                    if exam.exam_type == ExamType.CONSULTATION
+                    else "экзамен",
                 ]
 
         return df

@@ -3,21 +3,17 @@ from __future__ import annotations
 import contextlib
 import datetime
 import logging
-import os
-import re
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any, Generator
 
-from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from xls2xlsx import XLS2XLSX
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
-from rtu_schedule_parser.constants import Campus, Degree, Institute
+from rtu_schedule_parser.constants import Degree, Institute
 from rtu_schedule_parser.excel_formatter import ExcelFormatter
 from rtu_schedule_parser.parser import ScheduleParser
-from rtu_schedule_parser.schedule import Lesson, LessonEmpty, Room, Schedule
+from rtu_schedule_parser.schedule import Lesson, LessonEmpty, LessonsSchedule
 from rtu_schedule_parser.schedule_data import ScheduleData
 
 __all__ = ["ExcelScheduleParser"]
@@ -63,15 +59,6 @@ class _LessonRow:
 
 
 class ExcelScheduleParser(ScheduleParser):
-    # Campuses used by default if the campus is not specified in the schedule
-    _DEFAULT_CAMPUS = {
-        Institute.IIT: Campus.V_78,
-        Institute.ITHT: Campus.V_86,
-    }
-
-    # Group name regex pattern
-    RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
-
     def __init__(
         self,
         document_path: str,
@@ -80,44 +67,6 @@ class ExcelScheduleParser(ScheduleParser):
         degree: Degree,
     ) -> None:
         super().__init__(document_path, ExcelFormatter(), period, institute, degree)
-
-        self.__workbook = None
-        self.__worksheets = None
-
-    def __open_worksheets(self):
-        """Opens the workbook and all worksheets."""
-
-        if self._document_path.endswith(".xls"):
-            x2x = XLS2XLSX(self._document_path)
-            self._document_path = f"{os.path.splitext(self._document_path)[0]}.xlsx"
-            x2x.to_xlsx(self._document_path)
-
-        self.__workbook = load_workbook(
-            self._document_path, read_only=True, data_only=True
-        )
-        self.__worksheets = self.__workbook.worksheets
-
-    def __get_group_columns(
-        self, group_row_index: int, worksheet: Worksheet
-    ) -> list[tuple[str, int]]:
-        """Returns a list of tuples containing the group name and the column index for each group in the table."""
-        group_columns = []
-
-        for row in worksheet.iter_rows(group_row_index):
-            for cell in row:
-                if group_name := self.RE_GROUP_NAME.search(str(cell.value)):
-                    group_columns.append((group_name.group(1), cell.column))
-
-        return group_columns
-
-    def __find_group_row(self, worksheet) -> int | None:
-        """Find the row containing the group name."""
-        for row in worksheet.iter_rows(max_row=20, max_col=30):
-            for cell in row:
-                if self.RE_GROUP_NAME.match(str(cell.value)):
-                    return cell.row
-
-        return None
 
     def __get_lesson_element(
         self, lesson_length: int, lesson_index: int, elements: list[Any]
@@ -139,16 +88,6 @@ class ExcelScheduleParser(ScheduleParser):
             return elements[lesson_index // 2]
         else:
             return None
-
-    def __set_default_campus(self, room: Room) -> Room:
-        """Sets the campus to the default value if the campus is not specified."""
-        new_room = room
-        if new_room.campus is None and self._institute in self._DEFAULT_CAMPUS:
-            new_room = Room(
-                room.name, self._DEFAULT_CAMPUS[self._institute], room.room_type
-            )
-
-        return new_room
 
     def __parse_lessons(
         self, group_column: int, lesson_rows: list[_LessonRow], worksheet: Worksheet
@@ -210,7 +149,7 @@ class ExcelScheduleParser(ScheduleParser):
                     )
 
                     if lesson_room:
-                        lesson_room = self.__set_default_campus(lesson_room)
+                        lesson_room = self._set_default_campus(lesson_room)
 
                     lesson_teachers = lesson_teachers or []
 
@@ -227,7 +166,7 @@ class ExcelScheduleParser(ScheduleParser):
                         lesson_names[i][2],
                     )
 
-    def __get_lesson_cells(
+    def __parse_lesson_cells(
         self, group_cell_index: int, group_row_index: int, worksheet: Worksheet
     ) -> Generator[_LessonRow, None, None]:
         """
@@ -299,18 +238,18 @@ class ExcelScheduleParser(ScheduleParser):
         """
         Parses the worksheet and returns a list of groups.
         """
-        schedule = []  # type: list[Schedule]
+        schedule = []  # type: list[LessonsSchedule]
 
-        group_name_row = self.__find_group_row(worksheet)
+        group_name_row = self._find_group_row(worksheet)
 
         if group_name_row is None:
             return
 
-        group_columns = self.__get_group_columns(group_name_row, worksheet)
+        group_columns = self._get_group_columns(group_name_row, worksheet)
 
         first_group_column = group_columns[0][1]
         lesson_cells = list(
-            self.__get_lesson_cells(first_group_column, group_name_row, worksheet)
+            self.__parse_lesson_cells(first_group_column, group_name_row, worksheet)
         )
 
         for group_column in group_columns:
@@ -325,12 +264,13 @@ class ExcelScheduleParser(ScheduleParser):
                 )
 
                 schedule.append(
-                    Schedule(
-                        group_name,
-                        lessons,
-                        self._period,
-                        self._institute,
-                        self._degree,
+                    LessonsSchedule(
+                        group=group_name,
+                        period=self._period,
+                        institute=self._institute,
+                        degree=self._degree,
+                        document_url=None,  # TODO: implement,
+                        lessons=lessons,
                     )
                 )
 
@@ -355,11 +295,11 @@ class ExcelScheduleParser(ScheduleParser):
                 parsing time.
         """
 
-        self.__open_worksheets()
+        self._open_worksheets()
 
         schedule = []
 
-        for worksheet in self.__worksheets:
+        for worksheet in self._worksheets:
             if result := self.__parse_worksheet(worksheet, force):
                 schedule.extend(result)
 
