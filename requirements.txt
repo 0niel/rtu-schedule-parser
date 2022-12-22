@@ -4,3 +4,4 @@ beautifulsoup4==4.11.1
 pandas==1.4.3
 xls2xlsx==0.1.5
 currency-symbols==1.0.0
+pytz==2022.7

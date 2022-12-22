@@ -1,5 +1,3 @@
-import logging
-
 from rtu_schedule_parser.constants import Degree, Institute, ScheduleType
 
 
@@ -12,8 +10,12 @@ def test_get_docs_0(schedule_downloader):
     assert Institute.IKB in institutes
     assert Degree.PHD in degrees
 
-    if len(institutes) == len(Institute) and len(degrees) == len(Degree) - 1:  # -1 because of college
-        assert len(result) >= 4 * len(Institute) + 2 * len(Institute) + 4 * len(Institute)
+    if (
+        len(institutes) == len(Institute) and len(degrees) == len(Degree) - 1
+    ):  # -1 because of college
+        assert len(result) >= 4 * len(Institute) + 2 * len(Institute) + 4 * len(
+            Institute
+        )
 
 
 def test_get_docs_1(schedule_downloader):

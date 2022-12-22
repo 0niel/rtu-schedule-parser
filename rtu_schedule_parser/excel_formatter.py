@@ -370,7 +370,7 @@ class ExcelFormatter(Formatter):
 
         if not result:
             rooms = re.split(r" {2,}|\n", rooms_cell_value)
-            result = [Room(room, None, None) for room in rooms if room]
+            result = [Room(room.strip(), None, None) for room in rooms if room]
 
         for i in range(len(result)):
             room = result[i]

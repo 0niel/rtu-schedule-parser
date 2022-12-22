@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import pandas as pd
 
-from rtu_schedule_parser.schedule import LessonEmpty, Room, Schedule
+from rtu_schedule_parser.constants import ScheduleType
+from rtu_schedule_parser.schedule import (
+    ExamEmpty,
+    ExamsSchedule,
+    LessonEmpty,
+    LessonsSchedule,
+    Room,
+)
 
 
 class ScheduleData:
@@ -10,8 +17,27 @@ class ScheduleData:
     Schedule data for one institute. Contains list of schedules for each group.
     """
 
-    def __init__(self, schedule: list[Schedule], generate_dataframe: bool = False):
+    def __init__(
+        self,
+        schedule: list[LessonsSchedule | ExamsSchedule],
+        generate_dataframe: bool = False,
+        schedule_type: ScheduleType = ScheduleType.SEMESTER,
+    ):
+
+        if not schedule:
+            raise ValueError("Schedule cannot be empty")
+
+        # Test session format is equal to semester format
+        current_type = (
+            ExamsSchedule
+            if schedule_type == ScheduleType.EXAM_SESSION
+            else LessonsSchedule
+        )
+        if any(type(item) is not current_type for item in schedule):
+            raise TypeError(f"Schedule type must be {schedule_type}")
+
         self._schedule = schedule
+        self._schedule_type = schedule_type
         self._df = None
 
         if generate_dataframe:
@@ -31,23 +57,29 @@ class ScheduleData:
 
         self._df = df
 
-    def append(self, schedule: Schedule):
+    def append(self, schedule: LessonsSchedule | ExamsSchedule) -> None:
         """
         Append schedule to schedule data.
         """
+        if type(schedule) is not self._schedule_type:
+            raise TypeError(f"Schedule type must be {self._schedule_type}")
+
         self._schedule.append(schedule)
         if self._df:
-            self._df = self.generate_dataframe()
+            self.generate_dataframe()
 
-    def extend(self, schedule: list[Schedule]):
+    def extend(self, schedule: list[LessonsSchedule | ExamsSchedule]):
         """
         Extend schedule data with another schedule data.
         """
+        if type(schedule) is not self._schedule_type:
+            raise TypeError(f"Schedule type must be {self._schedule_type}")
+
         self._schedule.extend(schedule)
         if self._df:
-            self._df = self.generate_dataframe()
+            self.generate_dataframe()
 
-    def get_schedule(self) -> list[Schedule]:
+    def get_schedule(self) -> list[LessonsSchedule | ExamsSchedule]:
         """
         Get list of schedules.
         """
@@ -58,6 +90,11 @@ class ScheduleData:
         Get pandas dataframe. If dataframe is not generated, return None. Use generate_dataframe() to generate
         dataframe.
         """
+        if self._df is None:
+            raise ValueError(
+                "Dataframe is not generated. Use generate_dataframe() to generate dataframe first."
+            )
+
         return self._df
 
     def get_rooms(self) -> list[Room]:
@@ -66,18 +103,23 @@ class ScheduleData:
         """
         rooms = []
         for schedule in self._schedule:
-            for lesson in schedule.lessons:
-                # if is not LessonEmpty type
+            if type(schedule) is LessonsSchedule:
+                data = schedule.lessons
+            else:
+                data = schedule.exams
+
+            for item in data:
                 if (
-                    type(lesson) is not LessonEmpty
-                    and lesson.room is not None
-                    and lesson.room not in rooms
+                    type(item) is not LessonEmpty
+                    and type(item) is not ExamEmpty
+                    and item.room is not None
+                    and item.room not in rooms
                 ):
-                    rooms.append(lesson.room)
+                    rooms.append(item.room)
 
         return rooms
 
-    def get_group_schedule(self, group: str) -> Schedule:
+    def get_group_schedule(self, group: str) -> LessonsSchedule | ExamsSchedule:
         """
         Get schedule for group.
         """
@@ -97,6 +139,16 @@ class ScheduleData:
                 groups.append(schedule.group)
 
         return groups
+
+    @property
+    def schedule_type(self) -> ScheduleType:
+        """
+        Get schedule type. Schedule type is the same for all schedules in schedule data.
+        """
+        return self._schedule_type
+
+    def __repr__(self) -> str:
+        return f"ScheduleData({self._schedule}, {self._df}, {self._schedule_type})"
 
     # TODO:
     # def get_units(self):

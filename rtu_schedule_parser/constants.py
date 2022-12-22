@@ -1,4 +1,8 @@
+import re
 from enum import Enum, IntEnum
+
+# Regex pattern for group name validation.
+RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
 
 
 class Degree(IntEnum):
@@ -53,6 +57,17 @@ class ScheduleType(IntEnum):
 
     # Document of the exam session schedule.
     EXAM_SESSION = 3
+
+
+class ExamType(IntEnum):
+    """
+    Enumeration of exam types. Used in the exam schedule.
+    """
+
+    __slots__ = ()
+
+    CONSULTATION = 1
+    EXAMINATION = 2
 
 
 class Institute(Enum):

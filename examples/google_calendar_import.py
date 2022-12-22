@@ -1,9 +1,10 @@
-import os
-import pandas as pd
 import datetime
+import os
 
-from rtu_schedule_parser import ExcelScheduleParser, ScheduleData, LessonEmpty
-from rtu_schedule_parser.constants import Institute, Degree
+import pandas as pd
+
+from rtu_schedule_parser import ExcelScheduleParser, LessonEmpty, ScheduleData
+from rtu_schedule_parser.constants import Degree, Institute
 from rtu_schedule_parser.downloader import ScheduleDownloader
 
 

@@ -96,4 +96,3 @@ def test_get_rooms_13(excel_formatter):
         Room("Г-101-б", None, RoomType.AUDITORY),
     ]
     assert result == correct_result
-    
