@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
-from rtu_schedule_parser.utils.academic_calendar import Period
+from rtu_schedule_parser.utils.academic_calendar import Period, Weekday
 
 
 def test_academic_calendar():
@@ -54,4 +54,20 @@ def test_academic_calendar_2():
     )
     assert academic_calendar.get_semester_start(Period(2025, 2026, 2)) == date(
         2026, 2, 9
+    )
+
+
+def test_academic_calendar_3():
+    period = Period(2022, 2023, 1)
+    assert academic_calendar.get_day_by_week(period, Weekday.THURSDAY, 1) == date(
+        2022, 9, 1
+    )
+    assert academic_calendar.get_day_by_week(period, Weekday.MONDAY, 2) == date(
+        2022, 9, 5
+    )
+    assert academic_calendar.get_day_by_week(period, Weekday.MONDAY, 17) == date(
+        2022, 12, 19
+    )
+    assert academic_calendar.get_day_by_week(period, Weekday.SUNDAY, 17) == date(
+        2022, 12, 25
     )

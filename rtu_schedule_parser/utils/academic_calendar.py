@@ -111,10 +111,15 @@ def get_day_by_week(period: Period, weekday: Weekday, week: int) -> datetime.dat
         week: Week number for which the date of the day of the week is required.
     """
     start_date = get_semester_start(period)
-    if week == 1:
-        return start_date + datetime.timedelta(days=weekday.value[0] - 1)
 
-    return start_date + datetime.timedelta(days=7 * (week - 1) + weekday.value[0] - 1)
+    if week == 1:
+        return start_date + datetime.timedelta(
+            days=weekday.value[0] - 1 - start_date.weekday()
+        )
+
+    return start_date + datetime.timedelta(
+        days=7 * (week - 1) + weekday.value[0] - 1 - start_date.weekday()
+    )
 
 
 def get_semester_start(period: Period) -> datetime.date:
