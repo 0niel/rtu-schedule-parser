@@ -6,14 +6,12 @@ from rtu_schedule_parser.utils import Period
 
 if __name__ == "__main__":
 
-    doc_path = (
-        "C:\\Users\\foran\\Downloads\\Telegram Desktop\\экз_ИИТ_2 курс_21-22_лето.xlsx"
-    )
+    doc_path = (os.path.join(os.path.dirname(__file__), "экз_ИИТ_2 курс_21-22_лето.xlsx"))
 
     parser = ExcelExamScheduleParser(
         doc_path, Period(2021, 2022, 2), Institute.IIT, Degree.BACHELOR
     )
-    schedules = parser.parse(force=True, generate_dataframe=True)
+    schedules = parser.parse(force=False, generate_dataframe=True)
 
     # Initialize pandas dataframe
     df = schedules.get_dataframe()

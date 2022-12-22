@@ -1,9 +1,13 @@
+import contextlib
+
 from rtu_schedule_parser.constants import Campus
 
 
 def test_schedule_data_0(excel_parser):
     schedule_data = excel_parser.parse()
-    assert schedule_data.get_dataframe() is None
+    with contextlib.suppress(ValueError):
+        schedule_data.get_dataframe()
+        assert False
     assert len(schedule_data.get_groups()) > 0
     assert "КРБО-01-19" in schedule_data.get_groups()
     assert "ККСО-04-19" in schedule_data.get_groups()
@@ -21,12 +25,9 @@ def test_schedule_data_0(excel_parser):
     assert len(group_schedule.lessons) > 0
     assert group_schedule.lessons[0].name is not None
 
-    try:
+    with contextlib.suppress(ValueError):
         schedule_data.get_group_schedule("КРБО-01-22")
         assert False
-    except ValueError:
-        assert True
-
     # test get_rooms
     rooms = schedule_data.get_rooms()
     assert rooms is not None

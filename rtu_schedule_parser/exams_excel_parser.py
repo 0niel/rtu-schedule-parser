@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 import logging
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Generator
@@ -51,7 +52,7 @@ class _ExamRow:
 
     month: academic_calendar.Month
     day: int
-    time_start: datetime.time  # The start time of the exam
+    # time_start: datetime.time  # The start time of the exam
     row: tuple[str, ...]  # The row of the table
 
 
@@ -88,20 +89,9 @@ class ExcelExamScheduleParser(ScheduleParser):
         for i, exam_row_data in enumerate(exam_rows):
             row = exam_row_data.row
 
+            exam_type, exam_name, exam_teachers, time_start = None, None, None, None
             rooms = row[group_column + _ColumnDataType.ROOM].value
-            exam_type, exam_name, exam_teachers = None, None, None
-
-            # Example of offsets:
-            # +---------------------------+---+
-            # | Консультация              | 0 |
-            # +---------------------------+---+
-            # | Проектирование баз данных | 1 |
-            # +---------------------------+---+
-            # | Богомольная Г.В.          | 2 |
-            # +---------------------------+---+
-            # exam_type = worksheet.cell(row=row_index, column=group_column + 1).value
-            # exam_name = worksheet.cell(row=row_index + 1, column=group_column + 1).value
-            # exam_teachers = worksheet.cell(row=row_index + 2, column=group_column + 1).value
+            start_time_cell_value = row[group_column + _ColumnDataType.START_TIME].value
 
             try:
                 exam_type = exam_rows[i].row[group_column + _ColumnDataType.GROUP].value
@@ -117,6 +107,14 @@ class ExcelExamScheduleParser(ScheduleParser):
                 if (
                     exam_type
                 ):  # If the exam type is not None, then the exam name and teachers are in the next row
+                    # Example of offsets:
+                    # +---------------------------+---+
+                    # | Консультация              | 0 |
+                    # +---------------------------+---+
+                    # | Проектирование баз данных | 1 |
+                    # +---------------------------+---+
+                    # | Богомольная Г.В.          | 2 |
+                    # +---------------------------+---+
                     exam_name = (
                         exam_rows[i + 1].row[group_column + _ColumnDataType.GROUP].value
                     )
@@ -133,17 +131,32 @@ class ExcelExamScheduleParser(ScheduleParser):
                     rooms = self._formatter.get_rooms(rooms)
                     rooms = [self._set_default_campus(room) for room in rooms]
 
+                if start_time_cell_value:
+                    try:
+                        # In one cell, the time can be written in two ways:
+                        if times := re.findall(
+                            r"(\d{2}-\d{2})",
+                            start_time_cell_value,
+                        ):
+                            time_start = datetime.time(
+                                hour=int(times[0].split("-")[0]),
+                                minute=int(times[0].split("-")[1]),
+                            )
+
+                    except ValueError:
+                        time_start = None
+
                 if exam_name is None:
-                    ExamEmpty(
+                    yield ExamEmpty(
                         month=exam_row_data.month,
                         day=exam_row_data.day,
                     )
 
-                elif exam_name and exam_type:
+                elif exam_name and exam_type and time_start:
                     yield Exam(
                         month=exam_row_data.month,
                         day=exam_row_data.day,
-                        time_start=exam_row_data.time_start,
+                        time_start=time_start,
                         name=exam_name,
                         exam_type=exam_type,
                         teachers=exam_teachers or [],
@@ -165,16 +178,13 @@ class ExcelExamScheduleParser(ScheduleParser):
 
         row_count = min(worksheet.max_row, 100)
 
-        month, day, exam_type, exam_name, exam_teachers = None, None, None, None, None
+        month, day = None, None
 
         group_cell_index -= 1  # Convert to 0-based index
 
         for row in worksheet.iter_rows(min_row=initial_row_num, max_row=row_count):
             month_cell_value = row[group_cell_index + _ColumnDataType.MONTH].value
             day_cell_value = row[group_cell_index + _ColumnDataType.DAY].value
-            start_time_cell_value = row[
-                group_cell_index + _ColumnDataType.START_TIME
-            ].value
 
             with contextlib.suppress(ValueError):
                 if month_cell_value:
@@ -186,17 +196,10 @@ class ExcelExamScheduleParser(ScheduleParser):
                     if only_digits := "".join(filter(str.isdigit, str(day_cell_value))):
                         day = int(only_digits)
 
-                if start_time_cell_value:
-                    time_start = datetime.time(
-                        hour=int(start_time_cell_value.split("-")[0]),
-                        minute=int(start_time_cell_value.split("-")[1]),
-                    )
-
-                if month and day and time_start:
+                if month and day:
                     yield _ExamRow(
                         month=month,
                         day=day,
-                        time_start=time_start,
                         row=row,
                     )
 
