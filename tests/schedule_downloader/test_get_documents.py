@@ -67,3 +67,14 @@ def test_get_docs_4(schedule_downloader):
         specific_institutes={Institute.IPTIP},
     )
     assert len(result) == 9
+
+
+def test_get_docs_5(schedule_downloader):
+    result = schedule_downloader.get_documents(
+        specific_degrees={Degree.COLLEGE},
+        specific_schedule_types={
+            ScheduleType.SEMESTER,
+        },
+        specific_institutes={Institute.COLLEGE},
+    )
+    assert len(result) == 1

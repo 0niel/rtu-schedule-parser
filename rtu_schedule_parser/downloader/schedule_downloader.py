@@ -171,7 +171,9 @@ class ScheduleDownloader:
 
         return res
 
-    def __parse_institute_cards(self, element: bs4.Tag) -> dict[Institute, bs4.Tag]:
+    def __parse_institute_cards(
+        self, element: bs4.Tag, degree: Degree
+    ) -> dict[Institute, bs4.Tag]:
         res = {}
         institutes_names = [institute.name for institute in Institute]
         institutes_cards = element.select(
@@ -183,6 +185,11 @@ class ScheduleDownloader:
                     institute = Institute.get_by_name(institutes_name)
                     res[institute] = card
                     break
+
+        # College doesn't have institute cards, so we need to add it manually
+        if degree == Degree.COLLEGE:
+            res[Institute.COLLEGE] = element.select_one("div")
+
         return res
 
     def __parse_links_by_type(
@@ -192,6 +199,18 @@ class ScheduleDownloader:
 
         document_type_title = self._SCHEDULE_TYPE_HEADERS[document_types]
         schedule_titles = element.find_all("b", class_="uk-h3")
+
+        # If there are no document headers but there is one link to excel file, then it is a schedule for the whole
+        # institute
+        if not schedule_titles:
+            if len(element.select("a")) == 1:
+                doc_url = element.select_one("a")["href"]
+
+                if doc_url.endswith(".xls") or doc_url.endswith(".xlsx"):
+                    document_links.append(doc_url)
+
+            return document_links
+
         for title in schedule_titles:
             if document_type_title in title.text:
                 all_divs = title.parent.parent.find_all("div", recursive=False)
@@ -214,6 +233,7 @@ class ScheduleDownloader:
                                 and document["href"] not in document_links
                             ):
                                 document_links.append(document["href"])
+
         return document_links
 
     def download(self, schedule_document: ScheduleDocument) -> tuple[str, bool]:
@@ -307,7 +327,7 @@ class ScheduleDownloader:
 
             degree = Degree(i + 1)
             institute_schedule_cards[degree] = self.__parse_institute_cards(
-                tabs_content[i]
+                tabs_content[i], degree
             )
 
         if specific_institutes:

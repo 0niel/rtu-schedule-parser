@@ -6,6 +6,10 @@ RE_GROUP_NAME = re.compile(r"([А-Яа-я]{4}-\d{2}-\d{2})")
 
 
 class Degree(IntEnum):
+    """Enum for degree types."""
+
+    __slots__ = ()
+
     BACHELOR = 1
     MASTER = 2
     PHD = 3
@@ -95,6 +99,8 @@ class Institute(Enum):
     ITU = ("ИТУ", "Институт технологий управления")
 
     ITHT = ("ИТХТ", "Институт тонких химических технологий им. М.В. Ломоносова")
+
+    COLLEGE = ("КПК", "Колледж программирования и кибербезопасности")
 
     @property
     def short_name(self):
