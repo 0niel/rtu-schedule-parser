@@ -4,7 +4,7 @@ from enum import Enum, IntEnum
 
 import pytz
 
-MAX_WEEKS = 17
+MAX_WEEKS = 18
 
 
 class Month(IntEnum):
