@@ -62,8 +62,10 @@ class ScheduleParser(metaclass=ABCMeta):
 
         for row in worksheet.iter_rows(group_row_index):
             for cell in row:
-                if group_name := RE_GROUP_NAME.search(str(cell.value)):
-                    group_columns.append((group_name.group(1), cell.column))
+                if cell and cell.value:
+                    cell_value = str(cell.value).replace(" ", "")
+                    if group_name := RE_GROUP_NAME.search(cell_value):
+                        group_columns.append((group_name.group(1), cell.column))
 
         return group_columns
 
@@ -71,7 +73,11 @@ class ScheduleParser(metaclass=ABCMeta):
         """Find the row containing the group name."""
         for row in worksheet.iter_rows(max_row=20, max_col=30):
             for cell in row:
-                if RE_GROUP_NAME.match(str(cell.value)):
+                if (
+                    cell
+                    and cell.value
+                    and RE_GROUP_NAME.match(str(cell.value.replace(" ", "")))
+                ):
                     return cell.row
 
         return None

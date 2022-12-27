@@ -27,13 +27,14 @@ class ScheduleData:
         if not schedule:
             raise ValueError("Schedule cannot be empty")
 
-        # Test session format is equal to semester format
-        current_type = (
+        self.__current_type = (
             ExamsSchedule
             if schedule_type == ScheduleType.EXAM_SESSION
             else LessonsSchedule
         )
-        if any(type(item) is not current_type for item in schedule):
+
+        # Test session format is equal to semester format
+        if any(type(item) is not self.__current_type for item in schedule):
             raise TypeError(f"Schedule type must be {schedule_type}")
 
         self._schedule = schedule
@@ -61,10 +62,11 @@ class ScheduleData:
         """
         Append schedule to schedule data.
         """
-        if type(schedule) is not self._schedule_type:
+        if type(schedule) is not self.__current_type:
             raise TypeError(f"Schedule type must be {self._schedule_type}")
 
         self._schedule.append(schedule)
+
         if self._df:
             self.generate_dataframe()
 
@@ -72,11 +74,11 @@ class ScheduleData:
         """
         Extend schedule data with another schedule data.
         """
-        if type(schedule) is not self._schedule_type:
+        if any(type(item) is not self.__current_type for item in schedule):
             raise TypeError(f"Schedule type must be {self._schedule_type}")
 
         self._schedule.extend(schedule)
-        if self._df:
+        if self._df is None or self._df.empty:
             self.generate_dataframe()
 
     def get_schedule(self) -> list[LessonsSchedule | ExamsSchedule]:
@@ -90,7 +92,7 @@ class ScheduleData:
         Get pandas dataframe. If dataframe is not generated, return None. Use generate_dataframe() to generate
         dataframe.
         """
-        if self._df is None:
+        if self._df is None or self._df.empty:
             raise ValueError(
                 "Dataframe is not generated. Use generate_dataframe() to generate dataframe first."
             )

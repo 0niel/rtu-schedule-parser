@@ -43,6 +43,7 @@ class LessonType(Enum):
     LECTURE = "лек"
     INDIVIDUAL_WORK = "с/р"
     LABORATORY_WORK = "лаб"
+    TEST_SESSION = "зач"
 
 
 class ScheduleType(IntEnum):

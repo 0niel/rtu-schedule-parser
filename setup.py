@@ -23,7 +23,7 @@ requires = [
 def setup_package():
     metadata = dict(
         name="rtu-schedule-parser",
-        version="0.2.1",
+        version=locals()["__version__"],
         description="Easy extraction of the MIREA - Russian Technological University schedule from Excel documents.",
         long_description=readme,
         author="Oniel (Sergey Dmitriev)",

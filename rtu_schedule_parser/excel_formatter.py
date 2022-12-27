@@ -335,14 +335,14 @@ class ExcelFormatter(Formatter):
                 return Room(
                     room[1],
                     Campus.get_by_short_name(room[2]),
-                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
+                    self.ROOM_TYPE_SHORT_NAMES[room[0].strip().lower()],
                 )
 
             except ValueError:
                 return Room(
                     room[1],
                     None,
-                    self.ROOM_TYPE_SHORT_NAMES[room[0]],
+                    self.ROOM_TYPE_SHORT_NAMES[room[0].strip().lower()],
                 )
 
         for room in rooms_with_type:
@@ -434,6 +434,8 @@ class ExcelFormatter(Formatter):
             return LessonType.INDIVIDUAL_WORK
         elif type_name in [LessonType.LABORATORY_WORK.value, "лб", "лаб", "лр"]:
             return LessonType.LABORATORY_WORK
+        elif type_name in [LessonType.TEST_SESSION.value, "зач"]:
+            return LessonType.TEST_SESSION
         else:
             logger.warning(f"Unknown lesson type: {type_name}")
             return None

@@ -10,7 +10,7 @@ from typing import Any, Generator
 from openpyxl.worksheet.worksheet import Worksheet
 
 import rtu_schedule_parser.utils.academic_calendar as academic_calendar
-from rtu_schedule_parser.constants import Degree, Institute
+from rtu_schedule_parser.constants import Degree, Institute, ScheduleType
 from rtu_schedule_parser.excel_formatter import ExcelFormatter
 from rtu_schedule_parser.parser import ScheduleParser
 from rtu_schedule_parser.schedule import Lesson, LessonEmpty, LessonsSchedule
@@ -286,14 +286,26 @@ class ExcelScheduleParser(ScheduleParser):
         return schedule
 
     def parse(
-        self, force: bool = False, generate_dataframe: bool = False
+        self,
+        force: bool = False,
+        generate_dataframe: bool = False,
+        schedule_type: ScheduleType = ScheduleType.SEMESTER,
     ) -> ScheduleData:
         """
         Args:
             force: If True, then the schedule will be parsed even if exceptions occur during parsing.
             generate_dataframe: If True, then the schedule will be converted to a pandas DataFrame. It increases the
                 parsing time.
+            schedule_type: The type of schedule to parse (semester or test session for this parser).
         """
+
+        if (
+            schedule_type != ScheduleType.SEMESTER
+            and schedule_type != ScheduleType.TEST_SESSION
+        ):
+            raise ValueError(
+                "This parser supports only semester and test session schedules."
+            )
 
         self._open_worksheets()
 
@@ -303,4 +315,4 @@ class ExcelScheduleParser(ScheduleParser):
             if result := self.__parse_worksheet(worksheet, force):
                 schedule.extend(result)
 
-        return ScheduleData(schedule, generate_dataframe)
+        return ScheduleData(schedule, generate_dataframe, schedule_type)
