@@ -231,8 +231,16 @@ class ExcelFormatter(Formatter):
             return [int(week.strip()) for week in weeks_list]
 
         numbers = []
+
+        if "-" in numbers_substr and "," in numbers_substr and re.search(r"\d+-\d+,\d+-\d+", numbers_substr):
+            re_interval_numbers = r"(\d+ *- *\d+)"
+            interval_weeks_substring = re.findall(re_interval_numbers, numbers_substr)
+            for interval in interval_weeks_substring:
+                numbers += parse_interval_numbers(interval)
+            numbers.sort()
+
         # Weeks are listed in interval format and separated by comma
-        if "-" in numbers_substr and "," in numbers_substr:
+        elif "-" in numbers_substr and "," in numbers_substr:
             re_interval_numbers = r"(\d+ *- *\d+)"
             interval_weeks_substring = re.findall(re_interval_numbers, numbers_substr)[
                 0
