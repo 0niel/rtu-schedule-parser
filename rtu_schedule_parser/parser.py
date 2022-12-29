@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from abc import ABCMeta, abstractmethod
+from io import BytesIO
 
 from openpyxl.reader.excel import load_workbook
 from openpyxl.workbook import Workbook
@@ -49,8 +50,10 @@ class ScheduleParser(metaclass=ABCMeta):
             self._document_path = f"{os.path.splitext(self._document_path)[0]}.xlsx"
             x2x.to_xlsx(self._document_path)
 
+        input_excel = open(self._document_path, "rb")
+
         self._workbook = load_workbook(
-            self._document_path, read_only=True, data_only=True
+            filename=BytesIO(input_excel.read()), read_only=True, data_only=True
         )
         self._worksheets = self._workbook.worksheets
 

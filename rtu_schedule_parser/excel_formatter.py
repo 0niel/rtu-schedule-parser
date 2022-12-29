@@ -232,7 +232,11 @@ class ExcelFormatter(Formatter):
 
         numbers = []
 
-        if "-" in numbers_substr and "," in numbers_substr and re.search(r"\d+-\d+,\d+-\d+", numbers_substr):
+        if (
+            "-" in numbers_substr
+            and "," in numbers_substr
+            and re.search(r"\d+-\d+,\d+-\d+", numbers_substr)
+        ):
             re_interval_numbers = r"(\d+ *- *\d+)"
             interval_weeks_substring = re.findall(re_interval_numbers, numbers_substr)
             for interval in interval_weeks_substring:
