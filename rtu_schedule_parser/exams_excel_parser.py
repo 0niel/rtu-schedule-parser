@@ -84,8 +84,6 @@ class ExcelExamScheduleParser(ScheduleParser):
         # Convert to 0-based index
         group_column -= 1
 
-        # column = list(worksheet.iter_cols(min_col=group_column, max_col=group_column))
-
         for i, exam_row_data in enumerate(exam_rows):
             row = exam_row_data.row
 
@@ -134,8 +132,9 @@ class ExcelExamScheduleParser(ScheduleParser):
                 if start_time_cell_value:
                     try:
                         # In one cell, the time can be written in two ways:
+                        # Match the time in the format "hh-mm" (e.g. 10-30) or "h-mm" (e.g. 9-30)
                         if times := re.findall(
-                            r"(\d{2}-\d{2})",
+                            r"(\d{1,2}-\d{2})",
                             start_time_cell_value,
                         ):
                             time_start = datetime.time(
@@ -225,9 +224,12 @@ class ExcelExamScheduleParser(ScheduleParser):
 
         for group_column in group_columns:
             try:
-                exams = list(
-                    self.__parse_exams(group_column[1], exams_cells, worksheet)
-                )
+                exams = []
+
+                for exam in self.__parse_exams(group_column[1], exams_cells, worksheet):
+                    if (exam.day, exam.month) not in ((i.day, i.month) for i in exams):
+                        exams.append(exam)
+
                 group_name = group_column[0]
 
                 logger.info(
