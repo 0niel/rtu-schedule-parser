@@ -37,9 +37,9 @@ class ScheduleData:
         if any(type(item) is not self.__current_type for item in schedule):
             raise TypeError(f"Schedule type must be {schedule_type}")
 
-        self._schedule = schedule
-        self._schedule_type = schedule_type
-        self._df = None
+        self._schedule = schedule  # type: list[LessonsSchedule | ExamsSchedule]
+        self._schedule_type = schedule_type  # type: ScheduleType
+        self._df = None  # type: pd.DataFrame | None
 
         if generate_dataframe:
             self.generate_dataframe()
@@ -78,7 +78,9 @@ class ScheduleData:
             raise TypeError(f"Schedule type must be {self._schedule_type}")
 
         self._schedule.extend(schedule)
-        if self._df is None or self._df.empty:
+
+        # if dataframe is generated, regenerate it
+        if self._df is not None:
             self.generate_dataframe()
 
     def get_schedule(self) -> list[LessonsSchedule | ExamsSchedule]:
