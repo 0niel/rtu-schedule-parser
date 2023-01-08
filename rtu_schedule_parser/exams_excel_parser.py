@@ -188,9 +188,12 @@ class ExcelExamScheduleParser(ScheduleParser):
 
             with contextlib.suppress(ValueError):
                 if month_cell_value:
-                    month = academic_calendar.Month.from_str(
-                        month_cell_value.replace(" ", "")
+                    month_cell_value = month_cell_value.replace(" ", "")
+                    # Drop duplicate substrings from the month name. For example, "январьянварьянварь" -> "январь"
+                    month_cell_value = re.sub(
+                        r"(\w+).*\1", r"\1", month_cell_value, flags=re.IGNORECASE
                     )
+                    month = academic_calendar.Month.from_str(month_cell_value)
 
                 if day_cell_value:
                     if only_digits := "".join(filter(str.isdigit, str(day_cell_value))):
