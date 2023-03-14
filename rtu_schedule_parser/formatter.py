@@ -53,7 +53,7 @@ class Formatter(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def get_teachers(self, names_cell_value: str) -> list[str]:
+    def get_teachers(self, names_cell_value: str) -> list[str] | list[tuple[str, int]]:
         """
         Get information about the teacher from the schedule table cell value.
 
@@ -67,6 +67,11 @@ class Formatter(metaclass=ABCMeta):
             of a surname and initials. For example, "Иванов И.И.". The names are returned in a normalized form. For
             example, "Иванов И. И" will be returned as "Иванов И.И.", and "И.И. Иванов" will be returned as
             "Иванов И.И.".
+
+            If names_cell_value contains a subgroup number, the return value will be a list of tuples. The first
+            element of the tuple is the teacher's name, and the second element is the subgroup number. For example,
+            "Казачкова О.А.,1 пг\nКазачкова О.А.,2 пг" will be returned as
+            [("Казачкова О.А.", 1), ("Казачкова О.А.", 2)].
         """
         raise NotImplementedError
 
