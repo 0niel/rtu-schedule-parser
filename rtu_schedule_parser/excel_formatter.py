@@ -35,7 +35,7 @@ class ExcelFormatter(Formatter):
     # Unnecessary characters at the end of the line
     _RE_TRASH_END = r"([-,_.\+;]+$)"
 
-    _RE_SEPARATORS = r" {2,}|\n|,|;|\+|\/"
+    _RE_SEPARATORS = r" {2,}|\n{1,}|,|;|\+|\/"
 
     # Room type short names
     ROOM_TYPE_SHORT_NAMES = {
@@ -409,14 +409,19 @@ class ExcelFormatter(Formatter):
         def parse_teacher_subgroups(
             cell_value: str,
         ) -> list[tuple[str, int | None]] | None:
-            """Parse teacher subgroups from teacher name. Returns list of tuples with teacher name and subgroup number.
+            """Parse teacher subgroups from teacher name.
+            Returns list of tuples with teacher name and subgroup number.
             Or None if no subgroups found in teacher names cell.
 
             Example:
                 "Казачкова О.А.,1 пг\nИванова И.С.,2 пг" -> [("Казачкова О.А.", 1), ("Иванова И.С.", 2)]
+                "Казачкова О.А.,1 пг\nИванова И.С" -> [("Казачкова О.А.", 1), ("Иванова И.С.", None)]
             """
 
-            re_teacher = rf"(.*), ?(\d) ?{self._RE_SUBGROUPS}"
+            if not re.search(rf"(\d) ?{self._RE_SUBGROUPS}", cell_value):
+                return None
+
+            re_teacher = rf"([а-яА-ЯёЁ\- \.]+), ?(\d) ?{self._RE_SUBGROUPS}({self._RE_SEPARATORS})?|([а-яА-ЯёЁ\- \.]+)"
 
             re_teacher = re.compile(re_teacher, flags=re.I)
             teachers = re_teacher.findall(cell_value)
@@ -427,8 +432,12 @@ class ExcelFormatter(Formatter):
             result = []
 
             for teacher in teachers:
-                teacher_name, subgroup, _ = teacher
-                result.append((teacher_name.strip(), int(subgroup)))
+                teacher_name, subgroup, _, _, teacher_name_without_subgroup = teacher
+                subgroup = int(subgroup) if subgroup else None
+                if subgroup:
+                    result.append((teacher_name.strip(), subgroup))
+                else:
+                    result.append((teacher_name_without_subgroup.strip(), None))
 
             return result
 
