@@ -21,7 +21,7 @@ class ExcelFormatter(Formatter):
     # Exclude weeks words
     _RE_EXCLUDE_WEEKS = r"\W*(?:кр|кроме)(?:\.|\b)"
 
-    _RE_SUBGROUPS = r"(подгруппа|подгруп|подгр|п\/г|группа|гр)"
+    _RE_SUBGROUPS = r"(подгруппа|подгруп|подгр|п\/г|группа|гр|пг)"
 
     # Including weeks words, ignoring subgroups
     _RE_WEEKS = rf"{_RE_NUMBERS}\s*(?:(?:нед|н)|\W)(?![.\s\d,-]*{_RE_SUBGROUPS})[.\s]*"
@@ -35,7 +35,7 @@ class ExcelFormatter(Formatter):
     # Unnecessary characters at the end of the line
     _RE_TRASH_END = r"([-,_.\+;]+$)"
 
-    _RE_SEPARATORS = r" {2,}|\n|,|;|\+|\/"
+    _RE_SEPARATORS = r" {2,}|\n{1,}|,|;|\+|\/"
 
     # Room type short names
     ROOM_TYPE_SHORT_NAMES = {
@@ -391,7 +391,7 @@ class ExcelFormatter(Formatter):
 
         return result
 
-    def get_teachers(self, names_cell_value: str) -> list[str]:
+    def get_teachers(self, names_cell_value: str) -> list[str] | list[tuple[str, int]]:
         if not re.search(r"[а-яА-Я]", names_cell_value):
             return []
 
@@ -406,6 +406,41 @@ class ExcelFormatter(Formatter):
 
         names = re.split(self._RE_SEPARATORS, teachers_names)
 
+        def parse_teacher_subgroups(
+            cell_value: str,
+        ) -> list[tuple[str, int | None]] | None:
+            """Parse teacher subgroups from teacher name.
+            Returns list of tuples with teacher name and subgroup number.
+            Or None if no subgroups found in teacher names cell.
+
+            Example:
+                "Казачкова О.А.,1 пг\nИванова И.С.,2 пг" -> [("Казачкова О.А.", 1), ("Иванова И.С.", 2)]
+                "Казачкова О.А.,1 пг\nИванова И.С" -> [("Казачкова О.А.", 1), ("Иванова И.С.", None)]
+            """
+
+            if not re.search(rf"(\d) ?{self._RE_SUBGROUPS}", cell_value):
+                return None
+
+            re_teacher = rf"([а-яА-ЯёЁ\- \.]+), ?(\d) ?{self._RE_SUBGROUPS}({self._RE_SEPARATORS})?|([а-яА-ЯёЁ\- \.]+)"
+
+            re_teacher = re.compile(re_teacher, flags=re.I)
+            teachers = re_teacher.findall(cell_value)
+
+            if not teachers:
+                return None
+
+            result = []
+
+            for teacher in teachers:
+                teacher_name, subgroup, _, _, teacher_name_without_subgroup = teacher
+                subgroup = int(subgroup) if subgroup else None
+                if subgroup:
+                    result.append((teacher_name.strip(), subgroup))
+                else:
+                    result.append((teacher_name_without_subgroup.strip(), None))
+
+            return result
+
         def normalize_names(names_to_normalize: list[str]) -> list[str]:
             # Format names like "Иванов И.И.", "Иванов И. И.", "Иванов И И.", "Иванов И. И" and etc to "Иванов И.И."
             return [
@@ -418,7 +453,8 @@ class ExcelFormatter(Formatter):
             ]
 
         if len(names) > 1:
-            return [
+            with_subgroups = parse_teacher_subgroups(names_cell_value)
+            return with_subgroups or [
                 name.strip() for name in normalize_names(names) if name.strip() != ""
             ]
 

@@ -79,3 +79,42 @@ def test_get_teacher_12(excel_formatter):
 def test_get_teacher_13(excel_formatter):
     result = excel_formatter.get_teachers("Эйстрих-Геллер В.Ю, Эйстрих-Геллер В Ю.")
     assert result == ["Эйстрих-Геллер В.Ю.", "Эйстрих-Геллер В.Ю."]
+
+
+def test_get_teacher_14(excel_formatter):
+    result = excel_formatter.get_teachers("Казачкова О.А.,1 пг\nКазачкова О.А.,2 пг")
+    assert result == [("Казачкова О.А.", 1), ("Казачкова О.А.", 2)]
+
+
+def test_get_teacher_15(excel_formatter):
+    result = excel_formatter.get_teachers("Мочалова Л.В.,Оранская И.А.")
+    assert result == ["Мочалова Л.В.", "Оранская И.А."]
+
+
+def test_get_teacher_16(excel_formatter):
+    result = excel_formatter.get_teachers(
+        "Скрипник С.В.,1 пг\n"
+        "Скрипник С.В.,2 пг\n"
+        "Мышечкин А.А.,1 пг\n"
+        "Кудрявцев И.В.,2 пг\n"
+        "Мышечкин А.А.,2 пг\n"
+        "Кудрявцев И.В.,1 пг\n"
+    )
+
+    assert result == [
+        ("Скрипник С.В.", 1),
+        ("Скрипник С.В.", 2),
+        ("Мышечкин А.А.", 1),
+        ("Кудрявцев И.В.", 2),
+        ("Мышечкин А.А.", 2),
+        ("Кудрявцев И.В.", 1),
+    ]
+
+
+def test_get_teacher_17(excel_formatter):
+    result = excel_formatter.get_teachers("Фиронов А.М.,1 п/г\n\nСадовникова Я.Э.")
+
+    assert result == [
+        ("Фиронов А.М.", 1),
+        ("Садовникова Я.Э.", None),
+    ]
