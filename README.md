@@ -1,15 +1,15 @@
 [![codecov](https://codecov.io/gh/mirea-ninja/rtu-schedule-parser/branch/main/graph/badge.svg?token=W98TXURMYZ)](https://codecov.io/gh/mirea-ninja/rtu-schedule-parser)
 
 # rtu-schedule-parser
-Easy extraction of the MIREA - Russian Technological University schedule from Excel documents.
+Простое извлечение расписания МИРЭА - Российского Технологического Университета из Excel документов.
 
-## Why rtu-schedule-parser?
-* **Strict formatting:** We strive to extract schedules without unexpected totals. If problems are found, an error is raised and displayed.
-* **Output:** Schedule data is easily converted to pandas DataFrame format. This allows you to quickly export the extracted schedule to CSV, HTML, XML, JSON and other formats, as well as perform various selecting, sorting, etc. operations on the data.
-* **Compatibility:** Compatible with `.xls` and `.xlsx` document formats. Handles a large number of cases when parsing.
+## Почему rtu-schedule-parser?
+* **Строгий формат**: Мы стремимся извлечь расписания без неожиданных итогов. Если возникают проблемы при парсинге, выводится ошибка.
+* **Выходные данные**: Данные расписания легко преобразуются в формат Pandas DataFrame. Это позволяет быстро экспортировать извлеченное расписание в форматы CSV, HTML, XML, JSON и другие, а также выполнять различные операции выборки, сортировки и т.д. с данными.
+* **Совместимость**: Совместим с форматами документов .xls и .xlsx. Обрабатывает большое количество случаев при парсинге.
 
-## Example
-An example of how you can download documents with a schedule and extract a schedule for a specific group. You can see more examples [here](https://github.com/mirea-ninja/rtu-schedule-parser/tree/main/examples).
+## Примеры
+Пример того, как вы можете загружать документы с расписанием и извлекать расписание для определенной группы. Вы можете увидеть больше примеров [здесь](https://github.com/mirea-ninja/rtu-schedule-parser/tree/main/examples).
 ```python
 from rtu_schedule_parser import ExcelScheduleParser, ScheduleData
 from rtu_schedule_parser.constants import Institute, Degree
@@ -50,12 +50,12 @@ df.to_csv("schedule.csv")
 
 ```
 
-# Installation
-### From the source code
+# Установка
+### Из исходного кода
 ```bash
 $ git clone https://github.com/mirea-ninja/rtu-schedule-parser
 ```
-and then install using pip:
+затем установите с помощью pip:
 ```console
 $ cd rtu-schedule-parser
 $ python -m pip install .
