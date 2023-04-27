@@ -170,7 +170,10 @@ class LessonsSchedule(_Schedule):
                     lesson_room_type.value if lesson_room_type is not None else np.nan
                 )
                 weeks = ",".join(str(week) for week in lesson.weeks)
-                teachers = ",".join(lesson.teachers)
+                if len(lesson.teachers) > 0 and type(lesson.teachers[0]) is tuple:
+                    teachers = ",".join(teacher[0] for teacher in lesson.teachers)
+                else:
+                    teachers = ",".join(lesson.teachers)
                 lesson_type = lesson.type.value if lesson.type is not None else np.nan
                 df.loc[len(df)] = [
                     self.group,

@@ -291,6 +291,7 @@ class ExcelFormatter(Formatter):
     def __fix_room_typos(self, rooms: str) -> str:
         """Fix typos in room names."""
         rooms = rooms.replace("ауд спец.", "лаб.")
+        rooms = rooms.replace("Учебный портал РТУ МИРЭА", "СДО")
 
         en_to_ru_letters = {
             "A": "А",
