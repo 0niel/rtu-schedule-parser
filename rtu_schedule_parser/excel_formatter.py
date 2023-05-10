@@ -415,6 +415,17 @@ class ExcelFormatter(Formatter):
 
         names = re.split(self._RE_SEPARATORS, teachers_names)
 
+        def fix_typos(formatted_name: str):
+            # Format names to "Иванов И.И." format
+            re_name = r"([а-яА-ЯёЁ]+)\s+([а-яА-ЯёЁ]+)\.?\s*([а-яА-ЯёЁ]+)\.?"
+
+            fixed = re.sub(re_name, r"\g<1> \g<2>.\g<3>.", formatted_name).strip()
+
+            if not fixed or abs(len(formatted_name) - len(formatted_name)) > 3:
+                return formatted_name
+
+            return fixed
+
         def parse_teacher_subgroups(
             cell_value: str,
         ) -> list[tuple[str, int | None]] | None:
@@ -442,6 +453,14 @@ class ExcelFormatter(Formatter):
 
             for teacher in teachers:
                 teacher_name, subgroup, _, _, teacher_name_without_subgroup = teacher
+
+                if teacher_name and not teacher_name_without_subgroup:
+                    teacher_name = fix_typos(teacher_name)
+                elif teacher_name_without_subgroup and not teacher_name:
+                    teacher_name_without_subgroup = fix_typos(
+                        teacher_name_without_subgroup
+                    )
+
                 subgroup = int(subgroup) if subgroup else None
                 if subgroup:
                     result.append((teacher_name.strip(), subgroup))
@@ -471,13 +490,7 @@ class ExcelFormatter(Formatter):
         re_teacher_name = r"(?:(?:(?:[а-яё\-]{1,}) +(?:[а-яё]{1}\. {0,2}){1,2})|(?:(?:[а-яё\-]{3,}) ?))"
         found = re.findall(re_teacher_name, teachers_names, flags=re.I)
 
-        # Format this names to "Иванов И.И." format
-        re_name = r"([а-яА-ЯёЁ]+)\s+([а-яА-ЯёЁ]+)\.?\s+([а-яА-ЯёЁ]+)\.?"
-        found = [
-            re.sub(re_name, r"\g<1> \g<2>.\g<3>.", name).strip()
-            for name in normalize_names(found)
-            if name
-        ]
+        found = [fix_typos(name) for name in normalize_names(found)]
 
         return [x.strip() for x in found]
 

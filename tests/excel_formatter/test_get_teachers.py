@@ -127,3 +127,16 @@ def test_get_teacher_18(excel_formatter):
         ("Десятсков А.В.", 1),
         ("Соловьев А.А.", 2),
     ]
+
+
+def test_get_teacher_19(excel_formatter):
+    result = excel_formatter.get_teachers(
+        "Дальская Г.Ю.\n" "Рашутин Н.А.\n" "Юдин Г.А, 1 п/г\n" "Рашутин Н.А., 2 п/г"
+    )
+
+    assert result == [
+        ("Дальская Г.Ю.", None),
+        ("Рашутин Н.А.", None),
+        ("Юдин Г.А.", 1),
+        ("Рашутин Н.А.", 2),
+    ]
