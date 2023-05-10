@@ -43,6 +43,11 @@ class ExcelFormatter(Formatter):
         "лаб": RoomType.LABORATORY,
         "комп": RoomType.COMPUTERS,
         "физ": RoomType.SPORT,
+        "адм": RoomType.ADM,
+        "коворкинг": RoomType.COWORKING,
+        "ауд спец": RoomType.AUDITORY,
+        "каб": RoomType.AUDITORY,
+        "лаб спец": RoomType.LABORATORY,
     }
 
     def __format_subgroups_and_type(self, lesson: str) -> list:

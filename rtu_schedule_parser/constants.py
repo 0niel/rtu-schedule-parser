@@ -32,6 +32,12 @@ class RoomType(Enum):
 
     # Room type for physical education.
     SPORT = "физ"
+    
+    # Administrative room type.
+    ADM = "адм"
+    
+    # Room type for coworking zone.
+    COWORKING = "Коворкинг"
 
 
 class LessonType(Enum):

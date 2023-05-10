@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rtu_schedule_parser"
-version = "2.2.3"
+version = "2.2.4"
 description = "Easy extraction of the MIREA - Russian Technological University schedule from Excel documents."
 authors = ["Sergey Dmitriev <51058739+0niel@users.noreply.github.com>"]
 
