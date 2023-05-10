@@ -151,7 +151,9 @@ class ExcelScheduleParser(ScheduleParser):
                     if lesson_room:
                         lesson_room = self._set_default_campus(lesson_room)
 
-                    lesson_teachers = lesson_teachers or []
+                    lesson_teachers = (
+                        lesson_teachers or []
+                    )  # type: list[str] | list[tuple[str, int]] | None
 
                     subgroup = lesson_names[i][2]
 
@@ -162,6 +164,11 @@ class ExcelScheduleParser(ScheduleParser):
                             raise ValueError("Invalid lesson teachers")
 
                         subgroup = lesson_teachers[i][1]
+
+                    lesson_teachers = [
+                        teacher[0] if isinstance(teacher, tuple) else teacher
+                        for teacher in lesson_teachers
+                    ]
 
                     yield Lesson(
                         lesson_row_data.num,
