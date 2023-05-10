@@ -160,8 +160,11 @@ class ExcelScheduleParser(ScheduleParser):
                     if len(lesson_teachers) > 0 and isinstance(
                         lesson_teachers[0], tuple
                     ):
-                        if len(lesson_teachers) != lessons_len:
-                            raise ValueError("Invalid lesson teachers")
+                        if len(lesson_teachers) < lessons_len:
+                            if lesson_teachers[0][0] == lesson_teachers[1][0]:
+                                lesson_teachers.insert(0, ("", None))
+                            else:
+                                lesson_teachers.append(("", None))
 
                         subgroup = lesson_teachers[i][1]
 
@@ -175,7 +178,9 @@ class ExcelScheduleParser(ScheduleParser):
                         lesson_names[i][0],
                         lesson_weeks[i],
                         lesson_row_data.weekday,
-                        lesson_teachers,
+                        [lesson_teachers[i]]
+                        if len(lesson_teachers) == lessons_len
+                        else lesson_teachers,
                         lesson_row_data.time_start,
                         lesson_row_data.time_end,
                         lesson_names[i][1] or lesson_type,
