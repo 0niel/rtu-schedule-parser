@@ -1,13 +1,16 @@
 import os
 
 from rtu_schedule_parser import ExcelScheduleParser, ScheduleData
+from rtu_schedule_parser.constants import Degree, Institute
 from rtu_schedule_parser.downloader import ScheduleDownloader
 
 if __name__ == "__main__":
     # Initialize downloader with default directory to save files
     downloader = ScheduleDownloader()
     # Get documents for specified institute and degree
-    all_docs = downloader.get_documents()
+    all_docs = downloader.get_documents(
+        specific_institutes={Institute.III}, specific_degrees={Degree.BACHELOR}
+    )
 
     # Download only if they are not downloaded yet.
     downloaded = downloader.download_all(all_docs)
@@ -24,6 +27,8 @@ if __name__ == "__main__":
             schedules = parser.parse(force=True)
         else:
             schedules.extend(parser.parse(force=True).get_schedule())
+
+    schedules.generate_dataframe()
 
     # Initialize pandas dataframe
     df = schedules.get_dataframe()

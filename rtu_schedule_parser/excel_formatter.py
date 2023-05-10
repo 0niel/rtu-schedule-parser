@@ -292,6 +292,9 @@ class ExcelFormatter(Formatter):
         """Fix typos in room names."""
         rooms = rooms.replace("ауд спец.", "лаб.")
         rooms = rooms.replace("Учебный портал РТУ МИРЭА", "СДО")
+        rooms = re.sub(
+            r"ауд\.\s*каф\.", "ауд. кафедра", rooms, flags=re.IGNORECASE | re.MULTILINE
+        )
 
         en_to_ru_letters = {
             "A": "А",
