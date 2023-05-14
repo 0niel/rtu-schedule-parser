@@ -168,7 +168,7 @@ class ExcelScheduleParser(ScheduleParser):
 
                         subgroup = lesson_teachers[i][1]
 
-                    lesson_teachers = [
+                    lesson_teachers_names = [
                         teacher[0] if isinstance(teacher, tuple) else teacher
                         for teacher in lesson_teachers
                     ]
@@ -178,9 +178,9 @@ class ExcelScheduleParser(ScheduleParser):
                         lesson_names[i][0],
                         lesson_weeks[i],
                         lesson_row_data.weekday,
-                        [lesson_teachers[i]]
-                        if len(lesson_teachers) == lessons_len
-                        else lesson_teachers,
+                        [lesson_teachers_names[i]]
+                        if len(lesson_teachers_names) == lessons_len
+                        else lesson_teachers_names,
                         lesson_row_data.time_start,
                         lesson_row_data.time_end,
                         lesson_names[i][1] or lesson_type,
