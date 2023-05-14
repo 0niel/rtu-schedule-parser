@@ -68,7 +68,10 @@ class ScheduleParser(metaclass=ABCMeta):
                 if cell and cell.value:
                     cell_value = str(cell.value).replace(" ", "")
                     if group_name := RE_GROUP_NAME.search(cell_value):
-                        group_columns.append((group_name.group(1), cell.column))
+                        if group_name.group(1) not in [
+                            group[0] for group in group_columns
+                        ]:
+                            group_columns.append((group_name.group(1), cell.column))
 
         return group_columns
 

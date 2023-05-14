@@ -276,10 +276,11 @@ class ExcelScheduleParser(ScheduleParser):
 
         for group_column in group_columns:
             try:
+                group_name = group_column[0]
+
                 lessons = list(
                     self.__parse_lessons(group_column[1], lesson_cells, worksheet)
                 )
-                group_name = group_column[0]
 
                 logger.info(
                     f"Processing group '{group_name}', worksheet '{worksheet.title}'"
