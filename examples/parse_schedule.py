@@ -1,32 +1,49 @@
 import os
+import concurrent.futures
 
 from rtu_schedule_parser import ExcelScheduleParser, ScheduleData
-from rtu_schedule_parser.constants import Degree, Institute
+from rtu_schedule_parser.constants import Degree, Institute, ScheduleType
 from rtu_schedule_parser.downloader import ScheduleDownloader
 
-if __name__ == "__main__":
+
+def process_document(document_info):
+    doc, doc_path, is_downloaded = document_info
+
+    parser = ExcelScheduleParser(doc_path, doc.period, doc.institute, doc.degree)
+
+    print(f"Processing document: {doc}")
+    return parser.parse(force=True)
+
+
+def download_docs():
     # Initialize downloader with default directory to save files
     downloader = ScheduleDownloader()
+
     # Get documents for specified institute and degree
-    all_docs = downloader.get_documents(
-        specific_institutes={Institute.III}, specific_degrees={Degree.BACHELOR}
-    )
+    all_docs = downloader.get_documents(specific_schedule_types={ScheduleType.SEMESTER})
 
     # Download only if they are not downloaded yet.
     downloaded = downloader.download_all(all_docs)
 
     print(f"Downloaded {len(downloaded)} files")
+    return downloaded
+
+if __name__ == "__main__":
+    # Download docs
+    downloaded = download_docs()
 
     # Create schedule with downloaded files
     schedules = None  # type: ScheduleData | None
-    for doc, doc_path, is_downloaded in downloaded:
-        print(f"Processing document: {doc}")
 
-        parser = ExcelScheduleParser(doc_path, doc.period, doc.institute, doc.degree)
-        if schedules is None:
-            schedules = parser.parse(force=True)
-        else:
-            schedules.extend(parser.parse(force=True).get_schedule())
+    # Create a ThreadPoolExecutor for parallel processing
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = executor.map(process_document, downloaded)
+
+        for result in results:
+            if schedules is None:
+                schedules = result
+            else:
+                schedules.extend(result.get_schedule())
 
     schedules.generate_dataframe()
 
