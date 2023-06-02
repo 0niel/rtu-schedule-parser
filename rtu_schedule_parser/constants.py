@@ -49,7 +49,19 @@ class LessonType(Enum):
     LECTURE = "лек"
     INDIVIDUAL_WORK = "с/р"
     LABORATORY_WORK = "лаб"
-    TEST_SESSION = "зач"
+
+
+class TestSessionLessonType(Enum):
+    """
+    Enumeration of schedule lesson types used in the test session.
+    """
+
+    __slots__ = ()
+
+    CREDIT = "зач"
+    DIFFERENTIATED_CREDIT = "зд"
+    COURSE_WORK = "кр"
+    COURSE_PROJECT = "кп"
 
 
 class ScheduleType(IntEnum):

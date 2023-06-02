@@ -322,10 +322,7 @@ class ExcelScheduleParser(ScheduleParser):
             schedule_type: The type of schedule to parse (semester or test session for this parser).
         """
 
-        if (
-            schedule_type != ScheduleType.SEMESTER
-            and schedule_type != ScheduleType.TEST_SESSION
-        ):
+        if schedule_type not in [ScheduleType.SEMESTER, ScheduleType.TEST_SESSION]:
             raise ValueError(
                 "This parser supports only semester and test session schedules."
             )

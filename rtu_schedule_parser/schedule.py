@@ -15,6 +15,7 @@ from rtu_schedule_parser.constants import (
     Institute,
     LessonType,
     RoomType,
+    TestSessionLessonType,
 )
 from rtu_schedule_parser.utils.academic_calendar import Month, Period, Weekday
 
@@ -44,7 +45,7 @@ class Lesson:
     teachers: list[str]
     time_start: datetime.time
     time_end: datetime.time
-    type: LessonType | None = None
+    type: LessonType | TestSessionLessonType | None = None
     room: Room | None = None
     subgroup: int | None = None
 

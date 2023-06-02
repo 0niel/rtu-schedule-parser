@@ -4,7 +4,7 @@ import logging
 import re
 from dataclasses import replace
 
-from .constants import Campus, LessonType, RoomType
+from .constants import Campus, LessonType, RoomType, TestSessionLessonType
 from .formatter import Formatter
 from .schedule import Room
 
@@ -500,7 +500,9 @@ class ExcelFormatter(Formatter):
 
         return [x.strip() for x in found]
 
-    def __get_lesson_type(self, type_name: str) -> LessonType | None:
+    def __get_lesson_type(
+        self, type_name: str
+    ) -> LessonType | TestSessionLessonType | None:
         """Get lesson type by name"""
         if type_name in [LessonType.PRACTICE.value, "п", "пр", "кр", "крпа"]:
             return LessonType.PRACTICE
@@ -510,8 +512,26 @@ class ExcelFormatter(Formatter):
             return LessonType.INDIVIDUAL_WORK
         elif type_name in [LessonType.LABORATORY_WORK.value, "лб", "лаб", "лр"]:
             return LessonType.LABORATORY_WORK
-        elif type_name in [LessonType.TEST_SESSION.value, "зач"]:
-            return LessonType.TEST_SESSION
+        elif type_name in [TestSessionLessonType.CREDIT.value, "зач", "з"]:
+            return TestSessionLessonType.CREDIT
+        elif type_name in [
+            TestSessionLessonType.COURSE_WORK.value,
+            "к/р",
+            "защ кр",
+            "защ к/р",
+            "защ",
+        ]:
+            return TestSessionLessonType.COURSE_WORK
+        elif type_name in [TestSessionLessonType.COURSE_PROJECT.value, "к/п"]:
+            return TestSessionLessonType.COURSE_PROJECT
+        elif type_name in [
+            TestSessionLessonType.DIFFERENTIATED_CREDIT.value,
+            "диф. зач",
+            "д/з",
+            "диф",
+            "зд",
+        ]:
+            return TestSessionLessonType.DIFFERENTIATED_CREDIT
         else:
             logger.warning(f"Unknown lesson type: {type_name}")
             return None
