@@ -1,4 +1,4 @@
-__version__ = "2.2.8"
+__version__ = "2.2.9"
 __author__ = "Sergey Dmitriev"
 
 from .excel_parser import ExcelScheduleParser

@@ -300,6 +300,12 @@ class ExcelFormatter(Formatter):
         rooms = re.sub(
             r"ауд\.\s*каф\.", "ауд. кафедра", rooms, flags=re.IGNORECASE | re.MULTILINE
         )
+        rooms = re.sub(
+            r"Спорт\.?\s*зал\s*\((\w+)\)",
+            r"\g<1> спорт. зал",
+            rooms,
+            flags=re.MULTILINE,
+        )
 
         en_to_ru_letters = {
             "A": "А",

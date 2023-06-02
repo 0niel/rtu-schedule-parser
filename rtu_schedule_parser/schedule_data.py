@@ -23,7 +23,6 @@ class ScheduleData:
         generate_dataframe: bool = False,
         schedule_type: ScheduleType = ScheduleType.SEMESTER,
     ):
-
         if not schedule:
             raise ValueError("Schedule cannot be empty")
 
