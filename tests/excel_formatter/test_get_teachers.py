@@ -149,3 +149,15 @@ def test_get_tacher_20(excel_formatter):
         ("Амасев Д.В.", 1),
         ("Лобачев А.В.", 2),
     ]
+
+
+def test_get_teacher_21(excel_formatter):
+    result = excel_formatter.get_teachers("")
+
+    assert result == []
+
+
+def test_get_teacher_22(excel_formatter):
+    result = excel_formatter.get_teachers("1 п/г\n2 п/г")
+
+    assert result == []

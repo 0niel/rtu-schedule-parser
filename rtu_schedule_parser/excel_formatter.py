@@ -419,8 +419,6 @@ class ExcelFormatter(Formatter):
                 f"{teachers_names[:typo.span(1)[0]]}.{teachers_names[typo.span(1)[1]:]}"
             )
 
-        names = re.split(self._RE_SEPARATORS, teachers_names)
-
         def fix_typos(formatted_name: str):
             # Format names to "Иванов И.И." format
             re_name = r"([а-яА-ЯёЁ]+)\s+([а-яА-ЯёЁ]+)\.?\s*([а-яА-ЯёЁ]+)\.?"
@@ -431,6 +429,8 @@ class ExcelFormatter(Formatter):
                 return formatted_name
 
             return fixed
+
+        names = re.split(self._RE_SEPARATORS, teachers_names)
 
         def parse_teacher_subgroups(
             cell_value: str,
@@ -460,6 +460,12 @@ class ExcelFormatter(Formatter):
             for teacher in teachers:
                 teacher_name, subgroup, _, _, teacher_name_without_subgroup = teacher
 
+                if (
+                    len(teacher_name.strip()) < 3
+                    and len(teacher_name_without_subgroup.strip()) < 3
+                ):
+                    continue
+
                 if teacher_name and not teacher_name_without_subgroup:
                     teacher_name = fix_typos(teacher_name)
                 elif teacher_name_without_subgroup and not teacher_name:
@@ -488,8 +494,11 @@ class ExcelFormatter(Formatter):
 
         if len(names) > 1:
             with_subgroups = parse_teacher_subgroups(names_cell_value)
+
             return with_subgroups or [
-                name.strip() for name in normalize_names(names) if name.strip() != ""
+                name.strip()
+                for name in normalize_names(names)
+                if len(name.strip().replace(" ", "")) > 2
             ]
 
         # Names with initials (e.g. И.И. Иванов) may be separated by spaces
@@ -498,7 +507,7 @@ class ExcelFormatter(Formatter):
 
         found = [fix_typos(name) for name in normalize_names(found)]
 
-        return [x.strip() for x in found]
+        return [x.strip() for x in found if len(x.strip()) > 2]
 
     def __get_lesson_type(
         self, type_name: str
