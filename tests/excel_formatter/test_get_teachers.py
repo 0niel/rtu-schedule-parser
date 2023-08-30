@@ -160,4 +160,16 @@ def test_get_teacher_21(excel_formatter):
 def test_get_teacher_22(excel_formatter):
     result = excel_formatter.get_teachers("1 п/г\n2 п/г")
 
-    assert result == []
+    assert result == [
+        ('Нет', 1),
+        ('Нет', 2),
+    ]
+
+
+def test_get_teacher_23(excel_formatter):
+    result = excel_formatter.get_teachers("1 п/г\n\n2 п/г")
+
+    assert result == [
+        ('Нет', 1),
+        ('Нет', 2),
+    ]

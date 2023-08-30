@@ -406,9 +406,21 @@ class ExcelFormatter(Formatter):
 
         return result
 
+    def __replace_empty_teachers_to_text(self, text: str) -> str:
+        """Иногда стоят подгруппы бе преподавателей, заменяем их на текст. Такое бывает, если расписание не доделано."""
+        return re.sub(
+            r"^(\d п/г)$",
+            r"Нет,\g<1>",
+            text.strip(),
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+
+
     def get_teachers(self, names_cell_value: str) -> list[str] | list[tuple[str, int]]:
         if not re.search(r"[а-яА-Я]", names_cell_value):
             return []
+
+        names_cell_value = self.__replace_empty_teachers_to_text(names_cell_value)
 
         teachers_names = names_cell_value.strip()
 

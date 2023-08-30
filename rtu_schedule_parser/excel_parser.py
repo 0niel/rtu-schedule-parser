@@ -161,9 +161,12 @@ class ExcelScheduleParser(ScheduleParser):
                         lesson_teachers[0], tuple
                     ):
                         if len(lesson_teachers) < lessons_len:
-                            if lesson_teachers[0][0] == lesson_teachers[1][0]:
-                                lesson_teachers.insert(0, ("", None))
-                            else:
+                            try:
+                                if lesson_teachers[0][0] == lesson_teachers[1][0]:
+                                    lesson_teachers.insert(0, ("", None))
+                                else:
+                                    lesson_teachers.append(("", None))
+                            except IndexError:
                                 lesson_teachers.append(("", None))
 
                         subgroup = lesson_teachers[i][1]
