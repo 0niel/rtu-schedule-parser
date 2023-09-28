@@ -291,6 +291,8 @@ class ExcelFormatter(Formatter):
         # replace \n to space
         names = re.sub(r"(\n)(\d\s*п[/\\]?г)", r" \g<2>", names, flags=re.MULTILINE)
 
+        names = re.sub(r"Переезд", "", names, flags=re.MULTILINE)
+
         return names
 
     def __fix_room_typos(self, rooms: str) -> str:
@@ -414,7 +416,6 @@ class ExcelFormatter(Formatter):
             text.strip(),
             flags=re.IGNORECASE | re.MULTILINE,
         )
-
 
     def get_teachers(self, names_cell_value: str) -> list[str] | list[tuple[str, int]]:
         if not re.search(r"[а-яА-Я]", names_cell_value):
